@@ -1,40 +1,39 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserService } from './user.service';
-import { CreateUserDto } from '@libs/dto/user/create-user.dto';
-import { UpdateUserDto } from '@libs/dto/user/update-user.dto';
-import { UserResponseDto } from '@libs/dto/user/user-response.dto';
+import {CreateUserDto, UpdateUserDto} from "@libs/dto/user.dto"
+import { User } from '@libs/entity/user.entity';
 
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @GrpcMethod('UserService', 'CreateUser')
-  create(createUserDto: CreateUserDto): UserResponseDto {
+  create(createUserDto: CreateUserDto): Promise<User> {
     return this.userService.create(createUserDto);
   }
 
   @GrpcMethod('UserService', 'GetUser')
-  findOne(data: { id: string }): UserResponseDto | null {
+  findOne(data: { id: string }): Promise<User | null> {
     const user = this.userService.findOne(data.id);
     return user || null;
   }
 
   @GrpcMethod('UserService', 'UpdateUser')
-  update(data: { id: string; updateUserDto: UpdateUserDto }): UserResponseDto | null {
-    const { id, updateUserDto } = data;
+  async update(data: { id: string } & UpdateUserDto): Promise<User | null> {
+    const { id, ...updateUserDto } = data;
     return this.userService.update(id, updateUserDto);
   }
 
   @GrpcMethod('UserService', 'DeleteUser')
-  remove(data: { id: string }): { success: boolean } {
-    const success = this.userService.remove(data.id);
-    return { success };
+  async remove(data: { id: string }): Promise<{ success: true}> {
+    await this.userService.remove(data.id);
+    return { success: true}
   }
 
   @GrpcMethod('UserService', 'ListUsers')
-  findAll(): { users: UserResponseDto[] } {
-    const users = this.userService.findAll();
+  async findAll(): Promise<{ users: User[] }> {
+    const users = await this.userService.findAll();
     return { users };
   }
 } 

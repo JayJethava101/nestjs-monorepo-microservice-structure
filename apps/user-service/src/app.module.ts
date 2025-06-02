@@ -1,7 +1,20 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user/user.module';
+import { UserModule } from './modules/user/user.module';
+import { ConfigModule } from '@nestjs/config';
+import { join } from 'path';
+import { DatabaseModule } from './modules/database/database.module';
 
 @Module({
-  imports: [UserModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: join(__dirname, './../../../.env'),
+      cache: true,
+      expandVariables: true,
+    }),
+    UserModule,
+
+    DatabaseModule,
+  ],
 })
 export class AppModule {} 

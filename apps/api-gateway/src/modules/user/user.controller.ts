@@ -1,26 +1,18 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { CreateUserDto } from '@libs/dto/user/create-user.dto';
-import { UpdateUserDto } from '@libs/dto/user/update-user.dto';
-import { UserResponseDto } from '@libs/dto/user/user-response.dto';
+import {IUserService} from "@libs/interface/user-service.interface"
+import {CreateUserDto, UpdateUserDto} from "@libs/dto/user.dto"
 
-interface UserService {
-  createUser(data: CreateUserDto): UserResponseDto;
-  getUser(data: { id: string }): UserResponseDto;
-  updateUser(data: { id: string; updateUserDto: UpdateUserDto }): UserResponseDto;
-  deleteUser(data: { id: string }): { success: boolean };
-  listUsers(data: {}): { users: UserResponseDto[] };
-}
 
 @Controller('users')
 export class UserController {
-  private userService: UserService;
+  private userService: IUserService;
 
   constructor(@Inject('USER_PACKAGE') private client: ClientGrpc) {}
 
   onModuleInit() {
-    this.userService = this.client.getService<UserService>('UserService');
+    this.userService = this.client.getService<IUserService>('UserService');
   }
 
   @Post()
@@ -40,7 +32,11 @@ export class UserController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.updateUser({ id, updateUserDto });
+    // console.log('update user called in the api gateway', { id, ...updateUserDto });
+    return this.userService.updateUser({
+      id,
+      ...updateUserDto
+    });
   }
 
   @Delete(':id')

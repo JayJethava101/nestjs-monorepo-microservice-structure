@@ -8,6 +8,6 @@
       "@libs/*": ["../../libs/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../libs/entity/user.entity.ts", "../../libs/filters", "../../libs/exceptions", "../../libs/pipes"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 } 

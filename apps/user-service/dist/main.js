@@ -1,26 +1,11 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	var __webpack_modules__ = ([
-/* 0 */,
-/* 1 */
-/***/ ((module) => {
+/******/ 	var __webpack_modules__ = ({
 
-module.exports = require("@nestjs/core");
-
-/***/ }),
-/* 2 */
-/***/ ((module) => {
-
-module.exports = require("@nestjs/microservices");
-
-/***/ }),
-/* 3 */
-/***/ ((module) => {
-
-module.exports = require("path");
-
-/***/ }),
-/* 4 */
+/***/ "./apps/user-service/src/app.module.ts":
+/*!*********************************************!*\
+  !*** ./apps/user-service/src/app.module.ts ***!
+  \*********************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -32,8 +17,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AppModule = void 0;
-const common_1 = __webpack_require__(5);
-const user_module_1 = __webpack_require__(6);
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const user_module_1 = __webpack_require__(/*! ./user/user.module */ "./apps/user-service/src/user/user.module.ts");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -45,125 +30,11 @@ exports.AppModule = AppModule = __decorate([
 
 
 /***/ }),
-/* 5 */
-/***/ ((module) => {
 
-module.exports = require("@nestjs/common");
-
-/***/ }),
-/* 6 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UserModule = void 0;
-const common_1 = __webpack_require__(5);
-const user_service_1 = __webpack_require__(7);
-const user_controller_1 = __webpack_require__(9);
-const microservices_1 = __webpack_require__(2);
-const path_1 = __webpack_require__(3);
-let UserModule = class UserModule {
-};
-exports.UserModule = UserModule;
-exports.UserModule = UserModule = __decorate([
-    (0, common_1.Module)({
-        imports: [
-            microservices_1.ClientsModule.register([
-                {
-                    name: 'USER_PACKAGE',
-                    transport: microservices_1.Transport.GRPC,
-                    options: {
-                        package: 'user',
-                        protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
-                        url: 'localhost:5000',
-                    },
-                },
-            ]),
-        ],
-        controllers: [user_controller_1.UserController],
-        providers: [user_service_1.UserService],
-        exports: [user_service_1.UserService],
-    })
-], UserModule);
-
-
-/***/ }),
-/* 7 */
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UserService = void 0;
-const common_1 = __webpack_require__(5);
-const uuid_1 = __webpack_require__(8);
-let UserService = class UserService {
-    constructor() {
-        this.users = [];
-    }
-    create(createUserDto) {
-        const user = {
-            id: (0, uuid_1.v4)(),
-            ...createUserDto,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        this.users.push(user);
-        return user;
-    }
-    findAll() {
-        return this.users;
-    }
-    findOne(id) {
-        return this.users.find(user => user.id === id);
-    }
-    update(id, updateUserDto) {
-        const userIndex = this.users.findIndex(user => user.id === id);
-        if (userIndex === -1) {
-            return null;
-        }
-        const updatedUser = {
-            ...this.users[userIndex],
-            ...updateUserDto,
-            updatedAt: new Date(),
-        };
-        this.users[userIndex] = updatedUser;
-        return updatedUser;
-    }
-    remove(id) {
-        const userIndex = this.users.findIndex(user => user.id === id);
-        if (userIndex === -1) {
-            return false;
-        }
-        this.users.splice(userIndex, 1);
-        return true;
-    }
-};
-exports.UserService = UserService;
-exports.UserService = UserService = __decorate([
-    (0, common_1.Injectable)()
-], UserService);
-
-
-/***/ }),
-/* 8 */
-/***/ ((module) => {
-
-module.exports = require("uuid");
-
-/***/ }),
-/* 9 */
+/***/ "./apps/user-service/src/user/user.controller.ts":
+/*!*******************************************************!*\
+  !*** ./apps/user-service/src/user/user.controller.ts ***!
+  \*******************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -179,11 +50,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserController = void 0;
-const common_1 = __webpack_require__(5);
-const microservices_1 = __webpack_require__(2);
-const user_service_1 = __webpack_require__(7);
-const create_user_dto_1 = __webpack_require__(10);
-const user_response_dto_1 = __webpack_require__(12);
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
+const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/user/user.service.ts");
+const create_user_dto_1 = __webpack_require__(/*! @libs/dto/user/create-user.dto */ "./libs/dto/user/create-user.dto.ts");
+const user_response_dto_1 = __webpack_require__(/*! @libs/dto/user/user-response.dto */ "./libs/dto/user/user-response.dto.ts");
 let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -246,7 +117,125 @@ exports.UserController = UserController = __decorate([
 
 
 /***/ }),
-/* 10 */
+
+/***/ "./apps/user-service/src/user/user.module.ts":
+/*!***************************************************!*\
+  !*** ./apps/user-service/src/user/user.module.ts ***!
+  \***************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/user/user.service.ts");
+const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/user-service/src/user/user.controller.ts");
+const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
+const path_1 = __webpack_require__(/*! path */ "path");
+let UserModule = class UserModule {
+};
+exports.UserModule = UserModule;
+exports.UserModule = UserModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            microservices_1.ClientsModule.register([
+                {
+                    name: 'USER_PACKAGE',
+                    transport: microservices_1.Transport.GRPC,
+                    options: {
+                        package: 'user',
+                        protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
+                        url: 'localhost:5000',
+                    },
+                },
+            ]),
+        ],
+        controllers: [user_controller_1.UserController],
+        providers: [user_service_1.UserService],
+        exports: [user_service_1.UserService],
+    })
+], UserModule);
+
+
+/***/ }),
+
+/***/ "./apps/user-service/src/user/user.service.ts":
+/*!****************************************************!*\
+  !*** ./apps/user-service/src/user/user.service.ts ***!
+  \****************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const uuid_1 = __webpack_require__(/*! uuid */ "uuid");
+let UserService = class UserService {
+    constructor() {
+        this.users = [];
+    }
+    create(createUserDto) {
+        const user = {
+            id: (0, uuid_1.v4)(),
+            ...createUserDto,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        this.users.push(user);
+        return user;
+    }
+    findAll() {
+        return this.users;
+    }
+    findOne(id) {
+        return this.users.find(user => user.id === id);
+    }
+    update(id, updateUserDto) {
+        const userIndex = this.users.findIndex(user => user.id === id);
+        if (userIndex === -1) {
+            return null;
+        }
+        const updatedUser = {
+            ...this.users[userIndex],
+            ...updateUserDto,
+            updatedAt: new Date(),
+        };
+        this.users[userIndex] = updatedUser;
+        return updatedUser;
+    }
+    remove(id) {
+        const userIndex = this.users.findIndex(user => user.id === id);
+        if (userIndex === -1) {
+            return false;
+        }
+        this.users.splice(userIndex, 1);
+        return true;
+    }
+};
+exports.UserService = UserService;
+exports.UserService = UserService = __decorate([
+    (0, common_1.Injectable)()
+], UserService);
+
+
+/***/ }),
+
+/***/ "./libs/dto/user/create-user.dto.ts":
+/*!******************************************!*\
+  !*** ./libs/dto/user/create-user.dto.ts ***!
+  \******************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -261,7 +250,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CreateUserDto = void 0;
-const class_validator_1 = __webpack_require__(11);
+const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
@@ -278,13 +267,11 @@ __decorate([
 
 
 /***/ }),
-/* 11 */
-/***/ ((module) => {
 
-module.exports = require("class-validator");
-
-/***/ }),
-/* 12 */
+/***/ "./libs/dto/user/user-response.dto.ts":
+/*!********************************************!*\
+  !*** ./libs/dto/user/user-response.dto.ts ***!
+  \********************************************/
 /***/ ((__unused_webpack_module, exports) => {
 
 
@@ -295,8 +282,69 @@ class UserResponseDto {
 exports.UserResponseDto = UserResponseDto;
 
 
+/***/ }),
+
+/***/ "@nestjs/common":
+/*!*********************************!*\
+  !*** external "@nestjs/common" ***!
+  \*********************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/common");
+
+/***/ }),
+
+/***/ "@nestjs/core":
+/*!*******************************!*\
+  !*** external "@nestjs/core" ***!
+  \*******************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/core");
+
+/***/ }),
+
+/***/ "@nestjs/microservices":
+/*!****************************************!*\
+  !*** external "@nestjs/microservices" ***!
+  \****************************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/microservices");
+
+/***/ }),
+
+/***/ "class-validator":
+/*!**********************************!*\
+  !*** external "class-validator" ***!
+  \**********************************/
+/***/ ((module) => {
+
+module.exports = require("class-validator");
+
+/***/ }),
+
+/***/ "uuid":
+/*!***********************!*\
+  !*** external "uuid" ***!
+  \***********************/
+/***/ ((module) => {
+
+module.exports = require("uuid");
+
+/***/ }),
+
+/***/ "path":
+/*!***********************!*\
+  !*** external "path" ***!
+  \***********************/
+/***/ ((module) => {
+
+module.exports = require("path");
+
 /***/ })
-/******/ 	]);
+
+/******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -327,12 +375,15 @@ var __webpack_exports__ = {};
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
 (() => {
 var exports = __webpack_exports__;
+/*!***************************************!*\
+  !*** ./apps/user-service/src/main.ts ***!
+  \***************************************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core_1 = __webpack_require__(1);
-const microservices_1 = __webpack_require__(2);
-const path_1 = __webpack_require__(3);
-const app_module_1 = __webpack_require__(4);
+const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
+const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
+const path_1 = __webpack_require__(/*! path */ "path");
+const app_module_1 = __webpack_require__(/*! ./app.module */ "./apps/user-service/src/app.module.ts");
 async function bootstrap() {
     const app = await core_1.NestFactory.createMicroservice(app_module_1.AppModule, {
         transport: microservices_1.Transport.GRPC,

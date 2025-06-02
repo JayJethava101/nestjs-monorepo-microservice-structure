@@ -988,6 +988,362 @@ __export(__webpack_require__(/*! ./dist */ "./node_modules/@nestjs/config/dist/i
 
 /***/ }),
 
+/***/ "./node_modules/@nestjs/mapped-types/dist/index.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/index.js ***!
+  \*********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.inheritValidationMetadata = exports.inheritTransformationMetadata = exports.inheritPropertyInitializers = exports.applyValidateIfDefinedDecorator = exports.applyIsOptionalDecorator = void 0;
+__exportStar(__webpack_require__(/*! ./intersection-type.helper */ "./node_modules/@nestjs/mapped-types/dist/intersection-type.helper.js"), exports);
+__exportStar(__webpack_require__(/*! ./mapped-type.interface */ "./node_modules/@nestjs/mapped-types/dist/mapped-type.interface.js"), exports);
+__exportStar(__webpack_require__(/*! ./omit-type.helper */ "./node_modules/@nestjs/mapped-types/dist/omit-type.helper.js"), exports);
+__exportStar(__webpack_require__(/*! ./partial-type.helper */ "./node_modules/@nestjs/mapped-types/dist/partial-type.helper.js"), exports);
+__exportStar(__webpack_require__(/*! ./pick-type.helper */ "./node_modules/@nestjs/mapped-types/dist/pick-type.helper.js"), exports);
+var type_helpers_utils_1 = __webpack_require__(/*! ./type-helpers.utils */ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js");
+Object.defineProperty(exports, "applyIsOptionalDecorator", ({ enumerable: true, get: function () { return type_helpers_utils_1.applyIsOptionalDecorator; } }));
+Object.defineProperty(exports, "applyValidateIfDefinedDecorator", ({ enumerable: true, get: function () { return type_helpers_utils_1.applyValidateIfDefinedDecorator; } }));
+Object.defineProperty(exports, "inheritPropertyInitializers", ({ enumerable: true, get: function () { return type_helpers_utils_1.inheritPropertyInitializers; } }));
+Object.defineProperty(exports, "inheritTransformationMetadata", ({ enumerable: true, get: function () { return type_helpers_utils_1.inheritTransformationMetadata; } }));
+Object.defineProperty(exports, "inheritValidationMetadata", ({ enumerable: true, get: function () { return type_helpers_utils_1.inheritValidationMetadata; } }));
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/intersection-type.helper.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/intersection-type.helper.js ***!
+  \****************************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IntersectionType = IntersectionType;
+const type_helpers_utils_1 = __webpack_require__(/*! ./type-helpers.utils */ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js");
+function IntersectionType(...classRefs) {
+    class IntersectionClassType {
+        constructor() {
+            classRefs.forEach((classRef) => {
+                (0, type_helpers_utils_1.inheritPropertyInitializers)(this, classRef);
+            });
+        }
+    }
+    classRefs.forEach((classRef) => {
+        (0, type_helpers_utils_1.inheritValidationMetadata)(classRef, IntersectionClassType);
+        (0, type_helpers_utils_1.inheritTransformationMetadata)(classRef, IntersectionClassType, undefined, false);
+    });
+    const intersectedNames = classRefs.reduce((prev, ref) => prev + ref.name, '');
+    Object.defineProperty(IntersectionClassType, 'name', {
+        value: `Intersection${intersectedNames}`,
+    });
+    return IntersectionClassType;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/mapped-type.interface.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/mapped-type.interface.js ***!
+  \*************************************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/omit-type.helper.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/omit-type.helper.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.OmitType = OmitType;
+const type_helpers_utils_1 = __webpack_require__(/*! ./type-helpers.utils */ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js");
+function OmitType(classRef, keys) {
+    const isInheritedPredicate = (propertyKey) => !keys.includes(propertyKey);
+    class OmitClassType {
+        constructor() {
+            (0, type_helpers_utils_1.inheritPropertyInitializers)(this, classRef, isInheritedPredicate);
+        }
+    }
+    (0, type_helpers_utils_1.inheritValidationMetadata)(classRef, OmitClassType, isInheritedPredicate);
+    (0, type_helpers_utils_1.inheritTransformationMetadata)(classRef, OmitClassType, isInheritedPredicate);
+    return OmitClassType;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/partial-type.helper.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/partial-type.helper.js ***!
+  \***********************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PartialType = PartialType;
+const type_helpers_utils_1 = __webpack_require__(/*! ./type-helpers.utils */ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js");
+function PartialType(classRef, options = {}) {
+    class PartialClassType {
+        constructor() {
+            (0, type_helpers_utils_1.inheritPropertyInitializers)(this, classRef);
+        }
+    }
+    const propertyKeys = (0, type_helpers_utils_1.inheritValidationMetadata)(classRef, PartialClassType);
+    (0, type_helpers_utils_1.inheritTransformationMetadata)(classRef, PartialClassType);
+    if (propertyKeys) {
+        propertyKeys.forEach((key) => {
+            options.skipNullProperties === false
+                ? (0, type_helpers_utils_1.applyValidateIfDefinedDecorator)(PartialClassType, key)
+                : (0, type_helpers_utils_1.applyIsOptionalDecorator)(PartialClassType, key);
+        });
+    }
+    Object.defineProperty(PartialClassType, 'name', {
+        value: `Partial${classRef.name}`,
+    });
+    return PartialClassType;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/pick-type.helper.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/pick-type.helper.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PickType = PickType;
+const type_helpers_utils_1 = __webpack_require__(/*! ./type-helpers.utils */ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js");
+function PickType(classRef, keys) {
+    const isInheritedPredicate = (propertyKey) => keys.includes(propertyKey);
+    class PickClassType {
+        constructor() {
+            (0, type_helpers_utils_1.inheritPropertyInitializers)(this, classRef, isInheritedPredicate);
+        }
+    }
+    (0, type_helpers_utils_1.inheritValidationMetadata)(classRef, PickClassType, isInheritedPredicate);
+    (0, type_helpers_utils_1.inheritTransformationMetadata)(classRef, PickClassType, isInheritedPredicate);
+    return PickClassType;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/dist/type-helpers.utils.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.applyIsOptionalDecorator = applyIsOptionalDecorator;
+exports.applyValidateIfDefinedDecorator = applyValidateIfDefinedDecorator;
+exports.inheritValidationMetadata = inheritValidationMetadata;
+exports.inheritTransformationMetadata = inheritTransformationMetadata;
+exports.inheritPropertyInitializers = inheritPropertyInitializers;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const logger = new common_1.Logger('MappedTypes');
+function applyIsOptionalDecorator(targetClass, propertyKey) {
+    if (!isClassValidatorAvailable()) {
+        return;
+    }
+    const classValidator = __webpack_require__(/*! class-validator */ "class-validator");
+    const decoratorFactory = classValidator.IsOptional();
+    decoratorFactory(targetClass.prototype, propertyKey);
+}
+function applyValidateIfDefinedDecorator(targetClass, propertyKey) {
+    if (!isClassValidatorAvailable()) {
+        return;
+    }
+    const classValidator = __webpack_require__(/*! class-validator */ "class-validator");
+    const decoratorFactory = classValidator.ValidateIf((_, value) => value !== undefined);
+    decoratorFactory(targetClass.prototype, propertyKey);
+}
+function inheritValidationMetadata(parentClass, targetClass, isPropertyInherited) {
+    if (!isClassValidatorAvailable()) {
+        return;
+    }
+    try {
+        const classValidator = __webpack_require__(/*! class-validator */ "class-validator");
+        const metadataStorage = classValidator.getMetadataStorage
+            ? classValidator.getMetadataStorage()
+            : classValidator.getFromContainer(classValidator.MetadataStorage);
+        const getTargetValidationMetadatasArgs = [parentClass, null, false, false];
+        const targetMetadata = metadataStorage.getTargetValidationMetadatas(...getTargetValidationMetadatasArgs);
+        return targetMetadata
+            .filter(({ propertyName }) => !isPropertyInherited || isPropertyInherited(propertyName))
+            .map((value) => {
+            const originalType = Reflect.getMetadata('design:type', parentClass.prototype, value.propertyName);
+            if (originalType) {
+                Reflect.defineMetadata('design:type', originalType, targetClass.prototype, value.propertyName);
+            }
+            metadataStorage.addValidationMetadata({
+                ...value,
+                target: targetClass,
+            });
+            return value.propertyName;
+        });
+    }
+    catch (err) {
+        logger.error(`Validation ("class-validator") metadata cannot be inherited for "${parentClass.name}" class.`);
+        logger.error(err);
+    }
+}
+function inheritTransformationMetadata(parentClass, targetClass, isPropertyInherited, stackDecorators = true) {
+    if (!isClassTransformerAvailable()) {
+        return;
+    }
+    try {
+        const transformMetadataKeys = [
+            '_excludeMetadatas',
+            '_exposeMetadatas',
+            '_transformMetadatas',
+            '_typeMetadatas',
+        ];
+        transformMetadataKeys.forEach((key) => inheritTransformerMetadata(key, parentClass, targetClass, isPropertyInherited, stackDecorators));
+    }
+    catch (err) {
+        logger.error(`Transformer ("class-transformer") metadata cannot be inherited for "${parentClass.name}" class.`);
+        logger.error(err);
+    }
+}
+function inheritTransformerMetadata(key, parentClass, targetClass, isPropertyInherited, stackDecorators = true) {
+    let classTransformer;
+    try {
+        classTransformer = __webpack_require__(/*! class-transformer/cjs/storage */ "class-transformer/cjs/storage");
+    }
+    catch {
+        classTransformer = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'class-transformer/storage'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+    }
+    const metadataStorage = classTransformer.defaultMetadataStorage;
+    while (parentClass && parentClass !== Object) {
+        if (metadataStorage[key].has(parentClass)) {
+            const metadataMap = metadataStorage[key];
+            const parentMetadata = metadataMap.get(parentClass);
+            const targetMetadataEntries = Array.from(parentMetadata.entries())
+                .filter(([key]) => !isPropertyInherited || isPropertyInherited(key))
+                .map(([key, metadata]) => {
+                if (Array.isArray(metadata)) {
+                    const targetMetadata = metadata.map((item) => ({
+                        ...item,
+                        target: targetClass,
+                    }));
+                    return [key, targetMetadata];
+                }
+                return [key, { ...metadata, target: targetClass }];
+            });
+            if (metadataMap.has(targetClass)) {
+                const existingRules = metadataMap.get(targetClass).entries();
+                const mergeMap = new Map();
+                [existingRules, targetMetadataEntries].forEach((entries) => {
+                    for (const [valueKey, value] of entries) {
+                        if (mergeMap.has(valueKey) && stackDecorators) {
+                            const parentValue = mergeMap.get(valueKey);
+                            if (Array.isArray(parentValue)) {
+                                parentValue.push(...(Array.isArray(value) ? value : [value]));
+                            }
+                        }
+                        else {
+                            mergeMap.set(valueKey, value);
+                        }
+                    }
+                });
+                metadataMap.set(targetClass, mergeMap);
+            }
+            else {
+                metadataMap.set(targetClass, new Map(targetMetadataEntries));
+            }
+        }
+        parentClass = Object.getPrototypeOf(parentClass);
+    }
+}
+function isClassValidatorAvailable() {
+    try {
+        __webpack_require__(/*! class-validator */ "class-validator");
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+function isClassTransformerAvailable() {
+    try {
+        __webpack_require__(/*! class-transformer */ "class-transformer");
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+function inheritPropertyInitializers(target, sourceClass, isPropertyInherited = (key) => true) {
+    try {
+        const tempInstance = new sourceClass();
+        const propertyNames = Object.getOwnPropertyNames(tempInstance);
+        propertyNames
+            .filter((propertyName) => typeof tempInstance[propertyName] !== 'undefined' &&
+            typeof target[propertyName] === 'undefined')
+            .filter((propertyName) => isPropertyInherited(propertyName))
+            .forEach((propertyName) => {
+            target[propertyName] = tempInstance[propertyName];
+        });
+    }
+    catch {
+    }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/@nestjs/mapped-types/index.js":
+/*!****************************************************!*\
+  !*** ./node_modules/@nestjs/mapped-types/index.js ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+exports.__esModule = true;
+__export(__webpack_require__(/*! ./dist */ "./node_modules/@nestjs/mapped-types/dist/index.js"));
+
+
+/***/ }),
+
 /***/ "./node_modules/@nestjs/typeorm/dist/common/index.js":
 /*!***********************************************************!*\
   !*** ./node_modules/@nestjs/typeorm/dist/common/index.js ***!
@@ -12505,7 +12861,7 @@ const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "./node_modules/@ne
 const app_controller_1 = __webpack_require__(/*! ./app.controller */ "./apps/api-gateway/src/app.controller.ts");
 const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/api-gateway/src/modules/user/user.module.ts");
 const tenant_module_1 = __webpack_require__(/*! ./modules/tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
-const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/entities/tenant.entity */ "./apps/api-gateway/src/modules/tenant/entities/tenant.entity.ts");
+const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
 const path_1 = __webpack_require__(/*! path */ "path");
 let AppModule = class AppModule {
 };
@@ -12540,10 +12896,80 @@ exports.AppModule = AppModule = __decorate([
 
 /***/ }),
 
-/***/ "./apps/api-gateway/src/modules/tenant/dto/create-tenant.dto.ts":
-/*!**********************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/dto/create-tenant.dto.ts ***!
-  \**********************************************************************/
+/***/ "./apps/api-gateway/src/modules/tenant/tenant.controller.ts":
+/*!******************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/tenant/tenant.controller.ts ***!
+  \******************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TenantController = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
+const tenant_dto_1 = __webpack_require__(/*! ./tenant.dto */ "./apps/api-gateway/src/modules/tenant/tenant.dto.ts");
+let TenantController = class TenantController {
+    constructor(tenantService) {
+        this.tenantService = tenantService;
+    }
+    create(createTenantDto) {
+        console.log('Request came to tenanat controller...');
+        return this.tenantService.create(createTenantDto);
+    }
+    findAll() {
+        return this.tenantService.findAll();
+    }
+    findOne(id) {
+        return this.tenantService.findById(id);
+    }
+};
+exports.TenantController = TenantController;
+__decorate([
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof tenant_dto_1.CreateTenantDto !== "undefined" && tenant_dto_1.CreateTenantDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], TenantController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], TenantController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], TenantController.prototype, "findOne", null);
+exports.TenantController = TenantController = __decorate([
+    (0, common_1.Controller)('tenants'),
+    __metadata("design:paramtypes", [typeof (_a = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _a : Object])
+], TenantController);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/tenant/tenant.dto.ts":
+/*!***********************************************************!*\
+  !*** ./apps/api-gateway/src/modules/tenant/tenant.dto.ts ***!
+  \***********************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -12558,8 +12984,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateTenantDto = void 0;
+exports.UpdateTenantDto = exports.CreateTenantDto = void 0;
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
+const mapped_types_1 = __webpack_require__(/*! @nestjs/mapped-types */ "./node_modules/@nestjs/mapped-types/index.js");
 class CreateTenantDto {
 }
 exports.CreateTenantDto = CreateTenantDto;
@@ -12568,14 +12995,17 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "name", void 0);
+class UpdateTenantDto extends (0, mapped_types_1.PartialType)(CreateTenantDto) {
+}
+exports.UpdateTenantDto = UpdateTenantDto;
 
 
 /***/ }),
 
-/***/ "./apps/api-gateway/src/modules/tenant/entities/tenant.entity.ts":
-/*!***********************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/entities/tenant.entity.ts ***!
-  \***********************************************************************/
+/***/ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts":
+/*!**************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/tenant/tenant.entity.ts ***!
+  \**************************************************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -12643,77 +13073,6 @@ exports.Tenant = Tenant = __decorate([
 
 /***/ }),
 
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.controller.ts":
-/*!******************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.controller.ts ***!
-  \******************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-var _a, _b, _c, _d, _e;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TenantController = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const create_tenant_dto_1 = __webpack_require__(/*! ./dto/create-tenant.dto */ "./apps/api-gateway/src/modules/tenant/dto/create-tenant.dto.ts");
-let TenantController = class TenantController {
-    constructor(tenantService) {
-        this.tenantService = tenantService;
-    }
-    create(createTenantDto) {
-        console.log('Request came to tenanat controller...');
-        return this.tenantService.create(createTenantDto);
-    }
-    findAll() {
-        console.log('Request came to tenanat controller...');
-        return this.tenantService.findAll();
-    }
-    findOne(id) {
-        return this.tenantService.findById(id);
-    }
-};
-exports.TenantController = TenantController;
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof create_tenant_dto_1.CreateTenantDto !== "undefined" && create_tenant_dto_1.CreateTenantDto) === "function" ? _b : Object]),
-    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
-], TenantController.prototype, "create", null);
-__decorate([
-    (0, common_1.Get)(),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
-], TenantController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
-], TenantController.prototype, "findOne", null);
-exports.TenantController = TenantController = __decorate([
-    (0, common_1.Controller)('tenants'),
-    __metadata("design:paramtypes", [typeof (_a = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _a : Object])
-], TenantController);
-
-
-/***/ }),
-
 /***/ "./apps/api-gateway/src/modules/tenant/tenant.module.ts":
 /*!**************************************************************!*\
   !*** ./apps/api-gateway/src/modules/tenant/tenant.module.ts ***!
@@ -12734,7 +13093,7 @@ const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "./node_modules/@nestjs/typeorm/index.js");
 const tenant_controller_1 = __webpack_require__(/*! ./tenant.controller */ "./apps/api-gateway/src/modules/tenant/tenant.controller.ts");
 const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const tenant_entity_1 = __webpack_require__(/*! ./entities/tenant.entity */ "./apps/api-gateway/src/modules/tenant/entities/tenant.entity.ts");
+const tenant_entity_1 = __webpack_require__(/*! ./tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "./node_modules/@nestjs/config/index.js");
 const databaseConfig = (configService) => ({
     type: 'postgres',
@@ -12796,7 +13155,7 @@ const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "./node_modules/@ne
 const typeorm_2 = __webpack_require__(/*! typeorm */ "./node_modules/typeorm/index.js");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "./node_modules/@nestjs/config/index.js");
 const uuid_1 = __webpack_require__(/*! uuid */ "uuid");
-const tenant_entity_1 = __webpack_require__(/*! ./entities/tenant.entity */ "./apps/api-gateway/src/modules/tenant/entities/tenant.entity.ts");
+const tenant_entity_1 = __webpack_require__(/*! ./tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
 let TenantService = TenantService_1 = class TenantService {
     constructor(tenantRepository, configService) {
         this.tenantRepository = tenantRepository;
@@ -79596,6 +79955,28 @@ module.exports = require("@nestjs/core");
 
 "use strict";
 module.exports = require("@nestjs/microservices");
+
+/***/ }),
+
+/***/ "class-transformer":
+/*!************************************!*\
+  !*** external "class-transformer" ***!
+  \************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("class-transformer");
+
+/***/ }),
+
+/***/ "class-transformer/cjs/storage":
+/*!************************************************!*\
+  !*** external "class-transformer/cjs/storage" ***!
+  \************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("class-transformer/cjs/storage");
 
 /***/ }),
 

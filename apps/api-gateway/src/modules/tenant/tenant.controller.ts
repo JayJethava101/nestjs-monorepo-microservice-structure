@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { TenantService } from './tenant.service';
-import { CreateTenantDto } from './dto/create-tenant.dto';
-import { Tenant } from './entities/tenant.entity';
+import { CreateTenantDto } from './tenant.dto';
+import { Tenant } from './tenant.entity';
 
 @Controller('tenants')
 export class TenantController {
@@ -15,7 +15,6 @@ export class TenantController {
 
   @Get()
   findAll(): Promise<Tenant[]> {
-    console.log('Request came to tenanat controller...')
     return this.tenantService.findAll();
   }
 

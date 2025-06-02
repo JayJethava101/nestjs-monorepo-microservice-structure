@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import { Tenant } from './entities/tenant.entity';
-import { CreateTenantDto } from './dto/create-tenant.dto';
+import { Tenant } from './tenant.entity';
+import { CreateTenantDto } from './tenant.dto';
 // import { DatabaseService } from '../database/database.service';
 // import { KmsService } from '../services/kms.service';
 

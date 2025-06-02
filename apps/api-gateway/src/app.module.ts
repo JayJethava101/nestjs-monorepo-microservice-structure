@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
 import { TenantModule } from './modules/tenant/tenant.module';
-import { Tenant } from './modules/tenant/entities/tenant.entity';
+import { Tenant } from './modules/tenant/tenant.entity';
 import { join } from 'path';
 
 @Module({

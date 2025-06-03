@@ -174,7 +174,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b, _c, _d, _e, _f, _g;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -185,23 +185,35 @@ let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
     }
-    create(createUserDto) {
-        return this.userService.create(createUserDto);
+    getTenantInfo(metadata) {
+        const tenantId = metadata.internalRepr.get('tenant-id')?.[0];
+        const dbName = metadata.internalRepr.get('db-name')?.[0];
+        if (!tenantId || !dbName) {
+            throw new microservices_1.RpcException('Tenant ID and database name are required');
+        }
+        return { tenantId, dbName };
     }
-    findOne(data) {
-        const user = this.userService.findOne(data.id);
-        return user || null;
+    async create(createUserDto, metadata) {
+        const { tenantId, dbName } = this.getTenantInfo(metadata);
+        return this.userService.create(createUserDto, { tenantId, dbName });
     }
-    async update(data) {
+    async findOne(data, metadata) {
+        const { tenantId, dbName } = this.getTenantInfo(metadata);
+        return this.userService.findOne(data.id, { tenantId, dbName });
+    }
+    async update(data, metadata) {
+        const { tenantId, dbName } = this.getTenantInfo(metadata);
         const { id, ...updateUserDto } = data;
-        return this.userService.update(id, updateUserDto);
+        return this.userService.update(id, updateUserDto, { tenantId, dbName });
     }
-    async remove(data) {
-        await this.userService.remove(data.id);
+    async remove(data, metadata) {
+        const { tenantId, dbName } = this.getTenantInfo(metadata);
+        await this.userService.remove(data.id, { tenantId, dbName });
         return { success: true };
     }
-    async findAll() {
-        const users = await this.userService.findAll();
+    async findAll(data, metadata) {
+        const { tenantId, dbName } = this.getTenantInfo(metadata);
+        const users = await this.userService.findAll({ tenantId, dbName });
         return { users };
     }
 };
@@ -209,32 +221,32 @@ exports.UserController = UserController;
 __decorate([
     (0, microservices_1.GrpcMethod)('UserService', 'CreateUser'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object]),
-    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object, typeof (_c = typeof Record !== "undefined" && Record) === "function" ? _c : Object]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
 ], UserController.prototype, "create", null);
 __decorate([
     (0, microservices_1.GrpcMethod)('UserService', 'GetUser'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+    __metadata("design:paramtypes", [Object, typeof (_e = typeof Record !== "undefined" && Record) === "function" ? _e : Object]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
 ], UserController.prototype, "findOne", null);
 __decorate([
     (0, microservices_1.GrpcMethod)('UserService', 'UpdateUser'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+    __metadata("design:paramtypes", [Object, typeof (_g = typeof Record !== "undefined" && Record) === "function" ? _g : Object]),
+    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
 ], UserController.prototype, "update", null);
 __decorate([
     (0, microservices_1.GrpcMethod)('UserService', 'DeleteUser'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+    __metadata("design:paramtypes", [Object, typeof (_j = typeof Record !== "undefined" && Record) === "function" ? _j : Object]),
+    __metadata("design:returntype", typeof (_k = typeof Promise !== "undefined" && Promise) === "function" ? _k : Object)
 ], UserController.prototype, "remove", null);
 __decorate([
     (0, microservices_1.GrpcMethod)('UserService', 'ListUsers'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+    __metadata("design:paramtypes", [Object, typeof (_l = typeof Record !== "undefined" && Record) === "function" ? _l : Object]),
+    __metadata("design:returntype", typeof (_m = typeof Promise !== "undefined" && Promise) === "function" ? _m : Object)
 ], UserController.prototype, "findAll", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)(),
@@ -318,15 +330,12 @@ const base_exception_1 = __webpack_require__(/*! ../../../../../libs/exceptions/
 let UserService = UserService_1 = class UserService {
     constructor(databaseService) {
         this.databaseService = databaseService;
-        this.users = [];
         this.logger = new common_1.Logger(UserService_1.name);
         this.MODULE_NAME = 'user';
     }
-    async create(createUserDto) {
+    async create(createUserDto, dbOptions) {
         try {
-            const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-            const dbName = 'tenant_organization3_1748847960976';
-            const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+            const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
             const user = userRepository.create(createUserDto);
             const savedUser = await userRepository.save(user);
@@ -338,28 +347,24 @@ let UserService = UserService_1 = class UserService {
             throw new base_exception_1.ResourceInternalException('Failed to create user', this.MODULE_NAME);
         }
     }
-    async findAll() {
+    async findAll(dbOptions) {
         try {
-            const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-            const dbName = 'tenant_organization3_1748847960976';
-            const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+            const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
             return userRepository.find();
         }
         catch (error) {
-            this.logger.error(`Error fetching user: ${error.message}`, error.stack);
+            this.logger.error(`Error fetching users: ${error.message}`, error.stack);
             if (error instanceof base_exception_1.ResourceNotFoundException) {
                 throw error;
             }
-            throw new base_exception_1.ResourceInternalException(`Failed to fetch user: ${error.message}`, this.MODULE_NAME);
+            throw new base_exception_1.ResourceInternalException(`Failed to fetch users: ${error.message}`, this.MODULE_NAME);
         }
     }
-    async findOne(id) {
+    async findOne(id, dbOptions) {
         try {
             this.logger.log(`Fetching user with ID: ${id}`);
-            const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-            const dbName = 'tenant_organization3_1748847960976';
-            const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+            const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
             const user = await userRepository.findOne({ where: { id } });
             if (!user) {
@@ -376,12 +381,10 @@ let UserService = UserService_1 = class UserService {
             throw new base_exception_1.ResourceInternalException(`Failed to fetch user: ${error.message}`, this.MODULE_NAME);
         }
     }
-    async update(id, updateUserDto) {
+    async update(id, updateUserDto, dbOptions) {
         try {
             this.logger.log(`Updating user with ID: ${id}`);
-            const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-            const dbName = 'tenant_organization3_1748847960976';
-            const user = await this.findOne(id);
+            const user = await this.findOne(id, dbOptions);
             if (!user) {
                 throw new base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
             }
@@ -390,8 +393,7 @@ let UserService = UserService_1 = class UserService {
                 ...updateUserDto,
                 updatedAt: new Date(),
             };
-            console.log(updateUserDto, updatedUser);
-            const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+            const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
             await userRepository.save(updatedUser);
             this.logger.log(`User updated successfully with ID: ${id}`);
@@ -405,16 +407,14 @@ let UserService = UserService_1 = class UserService {
             throw new base_exception_1.ResourceInternalException('Failed to update user', this.MODULE_NAME);
         }
     }
-    async remove(id) {
+    async remove(id, dbOptions) {
         try {
-            const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-            const dbName = 'tenant_organization3_1748847960976';
             this.logger.log(`Deleting user with ID: ${id}`);
-            const user = await this.findOne(id);
+            const user = await this.findOne(id, dbOptions);
             if (!user) {
                 throw new base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
             }
-            const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+            const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
             await userRepository.remove(user);
             this.logger.log(`User deleted successfully with ID: ${id}`);

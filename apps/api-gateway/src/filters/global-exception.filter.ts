@@ -54,6 +54,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // HttpExceptions
+    return response.status(error.status).json({
+      status: 'error',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      // ...(process.env.NODE_ENV === 'development' && { stack: exception.stack })
+      stack: error.stack 
+    });
+   
   }
 
   private getHttpStatus(code: number): number {

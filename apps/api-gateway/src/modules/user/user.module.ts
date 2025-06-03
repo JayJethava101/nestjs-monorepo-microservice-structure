@@ -3,6 +3,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { UserController } from './user.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TenantModule } from '../tenant/tenant.module';
+import { TenantService } from '../tenant/tenant.service';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         inject: [ConfigService],
       },
     ]),
+
+    TenantModule
   ],
   controllers: [UserController],
 })

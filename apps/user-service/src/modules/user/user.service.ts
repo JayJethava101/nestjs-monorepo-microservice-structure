@@ -7,19 +7,14 @@ import { ResourceInternalException, ResourceNotFoundException } from '../../../.
 
 @Injectable()
 export class UserService {
-  private users: User[] = [];
-
   private readonly logger = new Logger(UserService.name);
   private readonly MODULE_NAME = 'user';
 
   constructor(private databaseService: DatabaseService) {}
 
-  async create(createUserDto: CreateUserDto,): Promise<User> {
+  async create(createUserDto: CreateUserDto, dbOptions: { tenantId: string, dbName: string }): Promise<User> {
     try {
-    const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-    const dbName = 'tenant_organization3_1748847960976';
-
-      const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+      const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
       const user = userRepository.create(createUserDto);
       const savedUser = await userRepository.save(user);
@@ -27,38 +22,31 @@ export class UserService {
       return savedUser;
     } catch (error) {
       this.logger.error(`Error creating user: ${error.message}`, error.message);
-      throw new ResourceInternalException ('Failed to create user', this.MODULE_NAME,);
+      throw new ResourceInternalException('Failed to create user', this.MODULE_NAME);
     }
   }
 
- async findAll(): Promise<User[]> {
- try{
-  const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-  const dbName = 'tenant_organization3_1748847960976';
-
-    const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
-    const userRepository = connection.getRepository(User);
-    return userRepository.find();
- }catch(error){
-  this.logger.error(`Error fetching user: ${error.message}`, error.stack);
-  if (error instanceof ResourceNotFoundException) {
-    throw error;
-  }
-  // Transform any other error into a ResourceInternalException
-  throw new ResourceInternalException(
-    `Failed to fetch user: ${error.message}`,
-    this.MODULE_NAME
-  );
- }
+  async findAll(dbOptions: { tenantId: string, dbName: string }): Promise<User[]> {
+    try {
+      const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
+      const userRepository = connection.getRepository(User);
+      return userRepository.find();
+    } catch (error) {
+      this.logger.error(`Error fetching users: ${error.message}`, error.stack);
+      if (error instanceof ResourceNotFoundException) {
+        throw error;
+      }
+      throw new ResourceInternalException(
+        `Failed to fetch users: ${error.message}`,
+        this.MODULE_NAME
+      );
+    }
   }
 
- async findOne(id: string): Promise<User | null> {
+  async findOne(id: string, dbOptions: { tenantId: string, dbName: string }): Promise<User | null> {
     try {
       this.logger.log(`Fetching user with ID: ${id}`);
-      const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-      const dbName = 'tenant_organization3_1748847960976';
-    
-      const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+      const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
       const user = await userRepository.findOne({ where: { id } });
       
@@ -73,7 +61,6 @@ export class UserService {
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }
-      // Transform any other error into a ResourceInternalException
       throw new ResourceInternalException(
         `Failed to fetch user: ${error.message}`,
         this.MODULE_NAME
@@ -81,12 +68,10 @@ export class UserService {
     }
   }
 
- async update(id: string, updateUserDto: UpdateUserDto): Promise<User|null> {
+  async update(id: string, updateUserDto: UpdateUserDto, dbOptions: { tenantId: string, dbName: string }): Promise<User | null> {
     try {
       this.logger.log(`Updating user with ID: ${id}`);
-      const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-      const dbName = 'tenant_organization3_1748847960976';
-      const user = await this.findOne(id);
+      const user = await this.findOne(id, dbOptions);
       
       if (!user) {
         throw new ResourceNotFoundException('User', id, this.MODULE_NAME);
@@ -97,10 +82,8 @@ export class UserService {
         ...updateUserDto,
         updatedAt: new Date(),
       };
-
-      console.log(updateUserDto, updatedUser)
       
-      const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+      const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
       await userRepository.save(updatedUser);
       this.logger.log(`User updated successfully with ID: ${id}`);
@@ -114,19 +97,16 @@ export class UserService {
     }
   }
 
- async remove(id: string): Promise<void> {
+  async remove(id: string, dbOptions: { tenantId: string, dbName: string }): Promise<void> {
     try {
-      const tenantId = '472b3f62-508f-422d-9db8-a644161c7dcb';
-      const dbName = 'tenant_organization3_1748847960976';
-
       this.logger.log(`Deleting user with ID: ${id}`);
-      const user = await this.findOne(id);
+      const user = await this.findOne(id, dbOptions);
       
       if (!user) {
         throw new ResourceNotFoundException('User', id, this.MODULE_NAME);
       }
       
-      const connection = await this.databaseService.getTenantConnection(tenantId, dbName);
+      const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
       await userRepository.remove(user);
       this.logger.log(`User deleted successfully with ID: ${id}`);

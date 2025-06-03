@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { UserService } from './user.service';
 import {CreateUserDto, UpdateUserDto} from "@libs/dto/user.dto"
 import { User } from '@libs/entity/user.entity';
@@ -8,32 +8,47 @@ import { User } from '@libs/entity/user.entity';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  private getTenantInfo(metadata: Record<string, any>): { tenantId: string; dbName: string } {
+    const tenantId = metadata.internalRepr.get('tenant-id')?.[0];
+    const dbName = metadata.internalRepr.get('db-name')?.[0];
+
+    if (!tenantId || !dbName) {
+      throw new RpcException('Tenant ID and database name are required');
+    }
+
+    return { tenantId, dbName };
+  }
+
   @GrpcMethod('UserService', 'CreateUser')
-  create(createUserDto: CreateUserDto): Promise<User> {
-    return this.userService.create(createUserDto);
+  async create(createUserDto: CreateUserDto, metadata: Record<string, any>): Promise<User> {
+    const { tenantId, dbName } = this.getTenantInfo(metadata);
+    return this.userService.create(createUserDto, { tenantId, dbName });
   }
 
   @GrpcMethod('UserService', 'GetUser')
-  findOne(data: { id: string }): Promise<User | null> {
-    const user = this.userService.findOne(data.id);
-    return user || null;
+  async findOne(data: { id: string }, metadata: Record<string, any>): Promise<User | null> {
+    const { tenantId, dbName } = this.getTenantInfo(metadata);
+    return this.userService.findOne(data.id, { tenantId, dbName });
   }
 
   @GrpcMethod('UserService', 'UpdateUser')
-  async update(data: { id: string } & UpdateUserDto): Promise<User | null> {
+  async update(data: { id: string } & UpdateUserDto, metadata: Record<string, any>): Promise<User | null> {
+    const { tenantId, dbName } = this.getTenantInfo(metadata);
     const { id, ...updateUserDto } = data;
-    return this.userService.update(id, updateUserDto);
+    return this.userService.update(id, updateUserDto, { tenantId, dbName });
   }
 
   @GrpcMethod('UserService', 'DeleteUser')
-  async remove(data: { id: string }): Promise<{ success: true}> {
-    await this.userService.remove(data.id);
-    return { success: true}
+  async remove(data: { id: string }, metadata: Record<string, any>): Promise<{ success: true}> {
+    const { tenantId, dbName } = this.getTenantInfo(metadata);
+    await this.userService.remove(data.id, { tenantId, dbName });
+    return { success: true };
   }
 
   @GrpcMethod('UserService', 'ListUsers')
-  async findAll(): Promise<{ users: User[] }> {
-    const users = await this.userService.findAll();
+  async findAll(data: object, metadata: Record<string, any>): Promise<{ users: User[] }> {
+    const { tenantId, dbName } = this.getTenantInfo(metadata);
+    const users = await this.userService.findAll({ tenantId, dbName });
     return { users };
   }
 } 

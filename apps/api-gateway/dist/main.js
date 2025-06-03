@@ -140,6 +140,12 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
                 });
             }
         }
+        return response.status(error.status).json({
+            status: 'error',
+            message: error.message,
+            timestamp: new Date().toISOString(),
+            stack: error.stack
+        });
     }
     getHttpStatus(code) {
         switch (code) {
@@ -522,79 +528,106 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c;
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
+const grpc_js_1 = __webpack_require__(/*! @grpc/grpc-js */ "@grpc/grpc-js");
+const createError = __webpack_require__(/*! http-errors */ "http-errors");
+const tenant_service_1 = __webpack_require__(/*! ../tenant/tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
 const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
 let UserController = class UserController {
-    constructor(client) {
+    constructor(client, tenantService) {
         this.client = client;
+        this.tenantService = tenantService;
     }
     onModuleInit() {
         this.userService = this.client.getService('UserService');
     }
-    create(createUserDto) {
-        return this.userService.createUser(createUserDto);
+    async prepareMetadata(tenantId) {
+        if (!tenantId) {
+            throw createError(400, 'tenantId is required in header');
+        }
+        const tenant = await this.tenantService.findById(tenantId);
+        if (!tenant) {
+            throw createError(404, 'Tenant not found');
+        }
+        const metadata = new grpc_js_1.Metadata();
+        metadata.add('tenant-id', tenantId);
+        metadata.add('db-name', tenant.dbName);
+        return metadata;
     }
-    findAll() {
-        return this.userService.listUsers({});
+    async create(createUserDto, tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        return this.userService.createUser(createUserDto, metadata);
     }
-    findOne(id) {
-        return this.userService.getUser({ id });
+    async findAll(tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        return this.userService.listUsers({}, metadata);
     }
-    update(id, updateUserDto) {
+    async findOne(id, tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        return this.userService.getUser({ id }, metadata);
+    }
+    async update(id, updateUserDto, tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
         return this.userService.updateUser({
             id,
             ...updateUserDto
-        });
+        }, metadata);
     }
-    remove(id) {
-        return this.userService.deleteUser({ id });
+    async remove(id, tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        return this.userService.deleteUser({ id }, metadata);
     }
 };
 exports.UserController = UserController;
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [typeof (_c = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _c : Object, String]),
+    __metadata("design:returntype", Promise)
 ], UserController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Headers)('x-tenant-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
 ], UserController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
 ], UserController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Headers)('x-tenant-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, typeof (_c = typeof user_dto_1.UpdateUserDto !== "undefined" && user_dto_1.UpdateUserDto) === "function" ? _c : Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, typeof (_d = typeof user_dto_1.UpdateUserDto !== "undefined" && user_dto_1.UpdateUserDto) === "function" ? _d : Object, String]),
+    __metadata("design:returntype", Promise)
 ], UserController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
 ], UserController.prototype, "remove", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('users'),
     __param(0, (0, common_2.Inject)('USER_PACKAGE')),
-    __metadata("design:paramtypes", [typeof (_a = typeof microservices_1.ClientGrpc !== "undefined" && microservices_1.ClientGrpc) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof microservices_1.ClientGrpc !== "undefined" && microservices_1.ClientGrpc) === "function" ? _a : Object, typeof (_b = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _b : Object])
 ], UserController);
 
 
@@ -620,6 +653,7 @@ const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestj
 const path_1 = __webpack_require__(/*! path */ "path");
 const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/api-gateway/src/modules/user/user.controller.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const tenant_module_1 = __webpack_require__(/*! ../tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
@@ -642,6 +676,7 @@ exports.UserModule = UserModule = __decorate([
                     inject: [config_1.ConfigService],
                 },
             ]),
+            tenant_module_1.TenantModule
         ],
         controllers: [user_controller_1.UserController],
     })
@@ -696,6 +731,16 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "name", void 0);
 
+
+/***/ }),
+
+/***/ "@grpc/grpc-js":
+/*!********************************!*\
+  !*** external "@grpc/grpc-js" ***!
+  \********************************/
+/***/ ((module) => {
+
+module.exports = require("@grpc/grpc-js");
 
 /***/ }),
 
@@ -766,6 +811,16 @@ module.exports = require("@nestjs/typeorm");
 /***/ ((module) => {
 
 module.exports = require("class-validator");
+
+/***/ }),
+
+/***/ "http-errors":
+/*!******************************!*\
+  !*** external "http-errors" ***!
+  \******************************/
+/***/ ((module) => {
+
+module.exports = require("http-errors");
 
 /***/ }),
 

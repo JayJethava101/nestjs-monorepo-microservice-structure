@@ -51,6 +51,8 @@ const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./a
 const tenant_module_1 = __webpack_require__(/*! ./modules/tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
 const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
 const path_1 = __webpack_require__(/*! path */ "path");
+const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
+const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -63,6 +65,10 @@ exports.AppModule = AppModule = __decorate([
                 cache: true,
                 expandVariables: true,
             }),
+            throttler_1.ThrottlerModule.forRoot([{
+                    ttl: 60000,
+                    limit: 10,
+                }]),
             typeorm_1.TypeOrmModule.forRoot({
                 name: 'central_db',
                 type: 'postgres',
@@ -78,6 +84,12 @@ exports.AppModule = AppModule = __decorate([
             tenant_module_1.TenantModule
         ],
         controllers: [app_controller_1.AppController],
+        providers: [
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard
+            }
+        ],
     })
 ], AppModule);
 
@@ -166,6 +178,45 @@ exports.GlobalExceptionFilter = GlobalExceptionFilter;
 exports.GlobalExceptionFilter = GlobalExceptionFilter = GlobalExceptionFilter_1 = __decorate([
     (0, common_1.Catch)()
 ], GlobalExceptionFilter);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/filters/throttler-exception.filter.ts":
+/*!********************************************************************!*\
+  !*** ./apps/api-gateway/src/filters/throttler-exception.filter.ts ***!
+  \********************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ThrottlerExceptionFilter = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
+let ThrottlerExceptionFilter = class ThrottlerExceptionFilter {
+    catch(exception, host) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
+        const status = common_1.HttpStatus.TOO_MANY_REQUESTS;
+        response
+            .status(status)
+            .json({
+            status: 'error',
+            message: 'Rate limit exceeded. Please try again later.',
+            timestamp: new Date().toISOString(),
+        });
+    }
+};
+exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter;
+exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter = __decorate([
+    (0, common_1.Catch)(throttler_1.ThrottlerException)
+], ThrottlerExceptionFilter);
 
 
 /***/ }),
@@ -794,6 +845,16 @@ module.exports = require("@nestjs/microservices");
 
 /***/ }),
 
+/***/ "@nestjs/throttler":
+/*!************************************!*\
+  !*** external "@nestjs/throttler" ***!
+  \************************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/throttler");
+
+/***/ }),
+
 /***/ "@nestjs/typeorm":
 /*!**********************************!*\
   !*** external "@nestjs/typeorm" ***!
@@ -894,11 +955,12 @@ const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
 const app_module_1 = __webpack_require__(/*! ./app.module */ "./apps/api-gateway/src/app.module.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const global_exception_filter_1 = __webpack_require__(/*! ./filters/global-exception.filter */ "./apps/api-gateway/src/filters/global-exception.filter.ts");
+const throttler_exception_filter_1 = __webpack_require__(/*! ./filters/throttler-exception.filter */ "./apps/api-gateway/src/filters/throttler-exception.filter.ts");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const port = configService.get('PORT', 3000);
-    app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter());
+    app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter(), new throttler_exception_filter_1.ThrottlerExceptionFilter());
     await app.listen(port);
     console.log(`API Gateway is running on: http://localhost:${port}`);
 }

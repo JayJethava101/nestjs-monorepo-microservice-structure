@@ -6,6 +6,8 @@ import { UserModule } from './modules/user/user.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { Tenant } from './modules/tenant/tenant.entity';
 import { join } from 'path';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -16,6 +18,12 @@ import { join } from 'path';
       cache: true,
       expandVariables: true,
     }),
+    
+    // Rate limiting configuration
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // Time window in mili seconds
+      limit: 10, // Maximum number of requests within the time window
+    }]),
     
     // Central management database connection
     TypeOrmModule.forRoot({
@@ -34,5 +42,11 @@ import { join } from 'path';
     TenantModule
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    }
+  ],
 })
 export class AppModule {} 

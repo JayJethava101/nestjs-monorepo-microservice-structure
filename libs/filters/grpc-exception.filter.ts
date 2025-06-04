@@ -2,14 +2,18 @@ import { Catch, RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common';
-// import { BaseException } from '../exceptions/base.exception';
+// import { GrpcBaseException } from '../exceptions/base.exception';
 
 @Catch(RpcException)
 export class GrpcExceptionFilter implements RpcExceptionFilter<RpcException> {
+  private readonly serviceName: string;
   private readonly logger = new Logger(GrpcExceptionFilter.name);
 
+  constructor(serviceName?: string) {
+    this.serviceName = serviceName || 'unknown-service';
+  }
+
   catch(exception: RpcException, host: ArgumentsHost): Observable<any> {
-    console.log('Flow come to grpc exception filetr')
     const error = exception.getError() as any;
     const module = error.module || 'unknown';
 
@@ -29,6 +33,7 @@ export class GrpcExceptionFilter implements RpcExceptionFilter<RpcException> {
             message: 'Validation failed',
             errors: validationErrors,
             module: module,
+            service: this.serviceName,
             timestamp: new Date().toISOString(),
           }),
         }));
@@ -43,6 +48,7 @@ export class GrpcExceptionFilter implements RpcExceptionFilter<RpcException> {
       details: JSON.stringify({
         message: error.message,
         module: module,
+        service: this.serviceName,
         timestamp: new Date().toISOString(),
       })
     }));

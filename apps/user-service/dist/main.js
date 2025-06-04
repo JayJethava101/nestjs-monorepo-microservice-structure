@@ -276,21 +276,27 @@ const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-se
 const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/user-service/src/modules/user/user.controller.ts");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 const path_1 = __webpack_require__(/*! path */ "path");
+const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            microservices_1.ClientsModule.register([
+            config_1.ConfigModule,
+            microservices_1.ClientsModule.registerAsync([
                 {
                     name: 'USER_PACKAGE',
-                    transport: microservices_1.Transport.GRPC,
-                    options: {
-                        package: 'user',
-                        protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
-                        url: 'localhost:5000',
-                    },
+                    imports: [config_1.ConfigModule],
+                    useFactory: (configService) => ({
+                        transport: microservices_1.Transport.GRPC,
+                        options: {
+                            package: configService.get('USER_SERVICE_PKG', 'user'),
+                            protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
+                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
+                        },
+                    }),
+                    inject: [config_1.ConfigService],
                 },
             ]),
         ],
@@ -326,7 +332,7 @@ exports.UserService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const user_entity_1 = __webpack_require__(/*! ../../../../../libs/entity/user.entity */ "./libs/entity/user.entity.ts");
 const database_service_1 = __webpack_require__(/*! ../database/database.service */ "./apps/user-service/src/modules/database/database.service.ts");
-const base_exception_1 = __webpack_require__(/*! ../../../../../libs/exceptions/base.exception */ "./libs/exceptions/base.exception.ts");
+const grpc_base_exception_1 = __webpack_require__(/*! ../../../../../libs/exceptions/grpc-base.exception */ "./libs/exceptions/grpc-base.exception.ts");
 let UserService = UserService_1 = class UserService {
     constructor(databaseService) {
         this.databaseService = databaseService;
@@ -339,12 +345,11 @@ let UserService = UserService_1 = class UserService {
             const userRepository = connection.getRepository(user_entity_1.User);
             const user = userRepository.create(createUserDto);
             const savedUser = await userRepository.save(user);
-            this.logger.log(`User created successfully with ID: ${savedUser.id}`);
             return savedUser;
         }
         catch (error) {
-            this.logger.error(`Error creating user: ${error.message}`, error.message);
-            throw new base_exception_1.ResourceInternalException('Failed to create user', this.MODULE_NAME);
+            this.logger.error(`Error creating user: ${error.message}`);
+            throw new grpc_base_exception_1.ResourceInternalException('Failed to create user', this.MODULE_NAME);
         }
     }
     async findAll(dbOptions) {
@@ -354,11 +359,11 @@ let UserService = UserService_1 = class UserService {
             return userRepository.find();
         }
         catch (error) {
-            this.logger.error(`Error fetching users: ${error.message}`, error.stack);
-            if (error instanceof base_exception_1.ResourceNotFoundException) {
+            this.logger.error(`Error fetching users: ${error.message}`);
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException) {
                 throw error;
             }
-            throw new base_exception_1.ResourceInternalException(`Failed to fetch users: ${error.message}`, this.MODULE_NAME);
+            throw new grpc_base_exception_1.ResourceInternalException(`Failed to fetch users: ${error.message}`, this.MODULE_NAME);
         }
     }
     async findOne(id, dbOptions) {
@@ -368,17 +373,17 @@ let UserService = UserService_1 = class UserService {
             const userRepository = connection.getRepository(user_entity_1.User);
             const user = await userRepository.findOne({ where: { id } });
             if (!user) {
-                throw new base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
+                throw new grpc_base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
             }
             this.logger.log(`User found with ID: ${id}`);
             return user;
         }
         catch (error) {
-            this.logger.error(`Error fetching user: ${error.message}`, error.stack);
-            if (error instanceof base_exception_1.ResourceNotFoundException) {
+            this.logger.error(`Error fetching user: ${error.message}`);
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException) {
                 throw error;
             }
-            throw new base_exception_1.ResourceInternalException(`Failed to fetch user: ${error.message}`, this.MODULE_NAME);
+            throw new grpc_base_exception_1.ResourceInternalException(`Failed to fetch user: ${error.message}`, this.MODULE_NAME);
         }
     }
     async update(id, updateUserDto, dbOptions) {
@@ -386,7 +391,7 @@ let UserService = UserService_1 = class UserService {
             this.logger.log(`Updating user with ID: ${id}`);
             const user = await this.findOne(id, dbOptions);
             if (!user) {
-                throw new base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
+                throw new grpc_base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
             }
             const updatedUser = {
                 ...user,
@@ -400,11 +405,11 @@ let UserService = UserService_1 = class UserService {
             return updatedUser;
         }
         catch (error) {
-            this.logger.error(`Error updating user: ${error.message}`, error.stack);
-            if (error instanceof base_exception_1.ResourceNotFoundException) {
+            this.logger.error(`Error updating user: ${error.message}`);
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException) {
                 throw error;
             }
-            throw new base_exception_1.ResourceInternalException('Failed to update user', this.MODULE_NAME);
+            throw new grpc_base_exception_1.ResourceInternalException('Failed to update user', this.MODULE_NAME);
         }
     }
     async remove(id, dbOptions) {
@@ -412,7 +417,7 @@ let UserService = UserService_1 = class UserService {
             this.logger.log(`Deleting user with ID: ${id}`);
             const user = await this.findOne(id, dbOptions);
             if (!user) {
-                throw new base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
+                throw new grpc_base_exception_1.ResourceNotFoundException('User', id, this.MODULE_NAME);
             }
             const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
             const userRepository = connection.getRepository(user_entity_1.User);
@@ -420,11 +425,11 @@ let UserService = UserService_1 = class UserService {
             this.logger.log(`User deleted successfully with ID: ${id}`);
         }
         catch (error) {
-            this.logger.error(`Error deleting user: ${error.message}`, error.stack);
-            if (error instanceof base_exception_1.ResourceNotFoundException) {
+            this.logger.error(`Error deleting user: ${error.message}`);
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException) {
                 throw error;
             }
-            throw new base_exception_1.ResourceInternalException('Failed to delete user', this.MODULE_NAME);
+            throw new grpc_base_exception_1.ResourceInternalException('Failed to delete user', this.MODULE_NAME);
         }
     }
 };
@@ -536,15 +541,15 @@ exports.User = User = __decorate([
 
 /***/ }),
 
-/***/ "./libs/exceptions/base.exception.ts":
-/*!*******************************************!*\
-  !*** ./libs/exceptions/base.exception.ts ***!
-  \*******************************************/
+/***/ "./libs/exceptions/grpc-base.exception.ts":
+/*!************************************************!*\
+  !*** ./libs/exceptions/grpc-base.exception.ts ***!
+  \************************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ResourceInternalException = exports.ResourceUnauthenticatedException = exports.ResourcePermissionDeniedException = exports.ResourceAlreadyExistsException = exports.ResourceValidationException = exports.ResourceNotFoundException = exports.BaseException = exports.ErrorCode = void 0;
+exports.ResourceInternalException = exports.ResourceUnauthenticatedException = exports.ResourcePermissionDeniedException = exports.ResourceAlreadyExistsException = exports.ResourceValidationException = exports.ResourceNotFoundException = exports.GrpcBaseException = exports.ErrorCode = void 0;
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 var ErrorCode;
 (function (ErrorCode) {
@@ -555,7 +560,7 @@ var ErrorCode;
     ErrorCode[ErrorCode["UNAUTHENTICATED"] = 16] = "UNAUTHENTICATED";
     ErrorCode[ErrorCode["INTERNAL_ERROR"] = 13] = "INTERNAL_ERROR";
 })(ErrorCode || (exports.ErrorCode = ErrorCode = {}));
-class BaseException extends microservices_1.RpcException {
+class GrpcBaseException extends microservices_1.RpcException {
     constructor(message, code = ErrorCode.INTERNAL_ERROR, module = 'unknown') {
         super({
             message,
@@ -564,38 +569,38 @@ class BaseException extends microservices_1.RpcException {
         });
     }
 }
-exports.BaseException = BaseException;
-class ResourceNotFoundException extends BaseException {
+exports.GrpcBaseException = GrpcBaseException;
+class ResourceNotFoundException extends GrpcBaseException {
     constructor(resource, id, module) {
         super(`${resource} with ID ${id} not found`, ErrorCode.NOT_FOUND, module);
     }
 }
 exports.ResourceNotFoundException = ResourceNotFoundException;
-class ResourceValidationException extends BaseException {
+class ResourceValidationException extends GrpcBaseException {
     constructor(message, module) {
         super(message, ErrorCode.VALIDATION_ERROR, module);
     }
 }
 exports.ResourceValidationException = ResourceValidationException;
-class ResourceAlreadyExistsException extends BaseException {
+class ResourceAlreadyExistsException extends GrpcBaseException {
     constructor(resource, identifier, module) {
         super(`${resource} with ${identifier} already exists`, ErrorCode.ALREADY_EXISTS, module);
     }
 }
 exports.ResourceAlreadyExistsException = ResourceAlreadyExistsException;
-class ResourcePermissionDeniedException extends BaseException {
+class ResourcePermissionDeniedException extends GrpcBaseException {
     constructor(message, module) {
         super(message, ErrorCode.PERMISSION_DENIED, module);
     }
 }
 exports.ResourcePermissionDeniedException = ResourcePermissionDeniedException;
-class ResourceUnauthenticatedException extends BaseException {
+class ResourceUnauthenticatedException extends GrpcBaseException {
     constructor(message = 'Unauthenticated', module) {
         super(message, ErrorCode.UNAUTHENTICATED, module);
     }
 }
 exports.ResourceUnauthenticatedException = ResourceUnauthenticatedException;
-class ResourceInternalException extends BaseException {
+class ResourceInternalException extends GrpcBaseException {
     constructor(message, module) {
         super(message, ErrorCode.INTERNAL_ERROR, module);
     }
@@ -618,6 +623,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var GrpcExceptionFilter_1;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GrpcExceptionFilter = void 0;
@@ -626,11 +634,11 @@ const rxjs_1 = __webpack_require__(/*! rxjs */ "rxjs");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 let GrpcExceptionFilter = GrpcExceptionFilter_1 = class GrpcExceptionFilter {
-    constructor() {
+    constructor(serviceName) {
         this.logger = new common_2.Logger(GrpcExceptionFilter_1.name);
+        this.serviceName = serviceName || 'unknown-service';
     }
     catch(exception, host) {
-        console.log('Flow come to grpc exception filetr');
         const error = exception.getError();
         const module = error.module || 'unknown';
         this.logger.error(`[${module}] Exception: ${error.message}`, exception.stack);
@@ -643,6 +651,7 @@ let GrpcExceptionFilter = GrpcExceptionFilter_1 = class GrpcExceptionFilter {
                     message: 'Validation failed',
                     errors: validationErrors,
                     module: module,
+                    service: this.serviceName,
                     timestamp: new Date().toISOString(),
                 }),
             }));
@@ -653,6 +662,7 @@ let GrpcExceptionFilter = GrpcExceptionFilter_1 = class GrpcExceptionFilter {
             details: JSON.stringify({
                 message: error.message,
                 module: module,
+                service: this.serviceName,
                 timestamp: new Date().toISOString(),
             })
         }));
@@ -660,7 +670,8 @@ let GrpcExceptionFilter = GrpcExceptionFilter_1 = class GrpcExceptionFilter {
 };
 exports.GrpcExceptionFilter = GrpcExceptionFilter;
 exports.GrpcExceptionFilter = GrpcExceptionFilter = GrpcExceptionFilter_1 = __decorate([
-    (0, common_1.Catch)(microservices_1.RpcException)
+    (0, common_1.Catch)(microservices_1.RpcException),
+    __metadata("design:paramtypes", [String])
 ], GrpcExceptionFilter);
 
 
@@ -684,7 +695,7 @@ exports.DtoValidationPipe = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 const class_transformer_1 = __webpack_require__(/*! class-transformer */ "class-transformer");
-const base_exception_1 = __webpack_require__(/*! ../exceptions/base.exception */ "./libs/exceptions/base.exception.ts");
+const grpc_base_exception_1 = __webpack_require__(/*! ../exceptions/grpc-base.exception */ "./libs/exceptions/grpc-base.exception.ts");
 let DtoValidationPipe = class DtoValidationPipe {
     async transform(value, { metatype }) {
         if (!metatype || !this.toValidate(metatype)) {
@@ -697,7 +708,7 @@ let DtoValidationPipe = class DtoValidationPipe {
                 property: error.property,
                 constraints: error.constraints,
             }));
-            throw new base_exception_1.ResourceValidationException(JSON.stringify(formattedErrors), 'user');
+            throw new grpc_base_exception_1.ResourceValidationException(JSON.stringify(formattedErrors), 'user');
         }
         return object;
     }
@@ -852,7 +863,7 @@ async function bootstrap() {
     const app = await core_1.NestFactory.createMicroservice(app_module_1.AppModule, {
         transport: microservices_1.Transport.GRPC,
         options: {
-            package: 'user',
+            package: process.env.USER_SERVICE_PKG || 'user',
             protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
             url: process.env.USER_SERVICE_URL || 'localhost:5000',
         },
@@ -860,8 +871,9 @@ async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const configService = app.get(config_1.ConfigService);
     const port = configService.get('USER_SERVICE_URL', 'localhost:5000').split(':')[1] || '5000';
+    const serviceName = configService.get('USER_SERVICE_PKG', 'user');
     app.useGlobalPipes(new validation_pipe_1.DtoValidationPipe());
-    app.useGlobalFilters(new grpc_exception_filter_1.GrpcExceptionFilter());
+    app.useGlobalFilters(new grpc_exception_filter_1.GrpcExceptionFilter(serviceName));
     await app.listen();
     logger.log(`User Service is running on port ${port}`);
 }

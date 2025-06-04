@@ -1,19 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, OnModuleInit } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Metadata } from '@grpc/grpc-js';
 import * as createError from 'http-errors';
-import {IUserService} from "@libs/interface/user-service.interface"
+import { IUserService } from "@libs/interface/user-service.interface"
 import { TenantService } from '../tenant/tenant.service';
-import {CreateUserDto, UpdateUserDto} from "@libs/dto/user.dto"
+import { CreateUserDto, UpdateUserDto } from "@libs/dto/user.dto"
+import { ConfigService } from '@nestjs/config';
 
 @Controller('users')
-export class UserController {
+export class UserController implements OnModuleInit {
   private userService: IUserService;
 
-  constructor(@Inject('USER_PACKAGE') private client: ClientGrpc, 
-  private tenantService: TenantService
-) {}
+  constructor(
+    @Inject('USER_PACKAGE') private client: ClientGrpc,
+    private tenantService: TenantService,
+  ) {}
 
   onModuleInit() {
     this.userService = this.client.getService<IUserService>('UserService');

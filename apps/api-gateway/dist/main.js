@@ -668,7 +668,7 @@ exports.UserModule = UserModule = __decorate([
                     useFactory: (configService) => ({
                         transport: microservices_1.Transport.GRPC,
                         options: {
-                            package: 'user',
+                            package: configService.get('USER_SERVICE_PKG', 'user'),
                             protoPath: (0, path_1.join)(__dirname, './../../../libs/proto/user.proto'),
                             url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
                         },

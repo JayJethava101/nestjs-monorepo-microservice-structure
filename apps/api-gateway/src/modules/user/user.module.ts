@@ -16,7 +16,7 @@ import { TenantService } from '../tenant/tenant.service';
         useFactory: (configService: ConfigService) => ({
           transport: Transport.GRPC,
           options: {
-            package: 'user',
+            package: configService.get<string>('USER_SERVICE_PKG', 'user'),
             protoPath: join(__dirname, './../../../libs/proto/user.proto'),
             url: configService.get<string>('USER_SERVICE_URL', 'localhost:5000'),
           },
@@ -24,9 +24,8 @@ import { TenantService } from '../tenant/tenant.service';
         inject: [ConfigService],
       },
     ]),
-
     TenantModule
   ],
   controllers: [UserController],
 })
-export class UserModule {} 
+export class UserModule {}

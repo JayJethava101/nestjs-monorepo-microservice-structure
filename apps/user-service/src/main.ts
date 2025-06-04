@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {
-      package: 'user',
+      package: process.env.USER_SERVICE_PKG || 'user',
       protoPath: join(__dirname, '../../../libs/proto/user.proto'),
       url: process.env.USER_SERVICE_URL || 'localhost:5000',
     },
@@ -20,12 +20,13 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
   const port = configService.get<string>('USER_SERVICE_URL', 'localhost:5000').split(':')[1] || '5000';
+  const serviceName = configService.get<string>('USER_SERVICE_PKG', 'user')
 
   // Use custom validation pipe
   app.useGlobalPipes(new DtoValidationPipe());
 
   // Use custom exception filter
-  app.useGlobalFilters(new GrpcExceptionFilter());
+  app.useGlobalFilters(new GrpcExceptionFilter(serviceName));
 
   await app.listen();
   logger.log(`User Service is running on port ${port}`);

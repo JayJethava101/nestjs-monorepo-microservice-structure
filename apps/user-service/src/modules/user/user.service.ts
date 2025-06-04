@@ -3,7 +3,7 @@ import { User } from '../../../../../libs/entity/user.entity';
 import {CreateUserDto, UpdateUserDto } from "@libs/dto/user.dto"
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from '../database/database.service';
-import { ResourceInternalException, ResourceNotFoundException } from '../../../../../libs/exceptions/base.exception';
+import { ResourceInternalException, ResourceNotFoundException } from '../../../../../libs/exceptions/grpc-base.exception';
 
 @Injectable()
 export class UserService {
@@ -18,10 +18,9 @@ export class UserService {
       const userRepository = connection.getRepository(User);
       const user = userRepository.create(createUserDto);
       const savedUser = await userRepository.save(user);
-      this.logger.log(`User created successfully with ID: ${savedUser.id}`);
       return savedUser;
     } catch (error) {
-      this.logger.error(`Error creating user: ${error.message}`, error.message);
+      this.logger.error(`Error creating user: ${error.message}`);
       throw new ResourceInternalException('Failed to create user', this.MODULE_NAME);
     }
   }
@@ -32,7 +31,7 @@ export class UserService {
       const userRepository = connection.getRepository(User);
       return userRepository.find();
     } catch (error) {
-      this.logger.error(`Error fetching users: ${error.message}`, error.stack);
+      this.logger.error(`Error fetching users: ${error.message}`);
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }
@@ -57,7 +56,7 @@ export class UserService {
       this.logger.log(`User found with ID: ${id}`);
       return user;  
     } catch (error) {
-      this.logger.error(`Error fetching user: ${error.message}`, error.stack);
+      this.logger.error(`Error fetching user: ${error.message}`);
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }
@@ -89,7 +88,7 @@ export class UserService {
       this.logger.log(`User updated successfully with ID: ${id}`);
       return updatedUser;
     } catch (error) {
-      this.logger.error(`Error updating user: ${error.message}`, error.stack);
+      this.logger.error(`Error updating user: ${error.message}`);
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }
@@ -111,7 +110,7 @@ export class UserService {
       await userRepository.remove(user);
       this.logger.log(`User deleted successfully with ID: ${id}`);
     } catch (error) {
-      this.logger.error(`Error deleting user: ${error.message}`, error.stack);
+      this.logger.error(`Error deleting user: ${error.message}`);
       if (error instanceof ResourceNotFoundException) {
         throw error;
       }

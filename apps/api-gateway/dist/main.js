@@ -81,7 +81,7 @@ exports.AppModule = AppModule = __decorate([
                 synchronize: true,
             }),
             user_module_1.UserModule,
-            tenant_module_1.TenantModule
+            tenant_module_1.TenantModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

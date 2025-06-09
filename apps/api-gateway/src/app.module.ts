@@ -39,7 +39,7 @@ import { APP_GUARD } from '@nestjs/core';
       synchronize: true, // todo: Set to false in production
     }),
     UserModule,
-    TenantModule
+    TenantModule,
   ],
   controllers: [AppController],
   providers: [

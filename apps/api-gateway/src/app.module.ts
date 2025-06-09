@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
@@ -8,6 +8,10 @@ import { Tenant } from './modules/tenant/tenant.entity';
 import { join } from 'path';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthModule } from './modules/auth/auth.module';
+import { RbacModule } from './modules/rbac/rbac.module';
+import { UtilsModule } from './modules/utils/utils.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -38,6 +42,20 @@ import { APP_GUARD } from '@nestjs/core';
       entities: [Tenant],
       synchronize: true, // todo: Set to false in production
     }),
+
+    // Redis connection
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'single',
+        url: configService.get('REDIS_URL', 'redis://localhost:6379'),
+      }),
+    }),
+
+    UtilsModule,
+    AuthModule,
+    RbacModule,
     UserModule,
     TenantModule,
   ],

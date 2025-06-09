@@ -7,17 +7,6 @@ import { Tenant } from './tenant.entity';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 // import { KmsService } from 'src/services/kms.service';
-const databaseConfig = (configService: ConfigService): DataSourceOptions => ({
-  type: 'postgres',
-  name: 'central_db',
-  host: configService.get<string>('PG_HOST', 'localhost'),
-  port: configService.get<number>('PG_PORT', 5432),
-  username: configService.get<string>('PG_USER', 'postgres'),
-  password: configService.get<string>('PG_PASSWORD', '1234'),
-  database: configService.get<string>('PG_MANAGEMENT_DB', 'sspm_central_db'),
-  entities: [Tenant],
-  synchronize: true,
-});
 
 @Module({
   imports: [

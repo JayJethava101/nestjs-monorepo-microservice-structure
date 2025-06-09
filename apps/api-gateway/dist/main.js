@@ -1,37 +1,14 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	var __webpack_modules__ = ({
+/******/ 	var __webpack_modules__ = ([
+/* 0 */,
+/* 1 */
+/***/ ((module) => {
 
-/***/ "./apps/api-gateway/src/app.controller.ts":
-/*!************************************************!*\
-  !*** ./apps/api-gateway/src/app.controller.ts ***!
-  \************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AppController = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-let AppController = class AppController {
-};
-exports.AppController = AppController;
-exports.AppController = AppController = __decorate([
-    (0, common_1.Controller)('api')
-], AppController);
-
+module.exports = require("@nestjs/core");
 
 /***/ }),
-
-/***/ "./apps/api-gateway/src/app.module.ts":
-/*!********************************************!*\
-  !*** ./apps/api-gateway/src/app.module.ts ***!
-  \********************************************/
+/* 2 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -43,16 +20,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AppModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
-const app_controller_1 = __webpack_require__(/*! ./app.controller */ "./apps/api-gateway/src/app.controller.ts");
-const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/api-gateway/src/modules/user/user.module.ts");
-const tenant_module_1 = __webpack_require__(/*! ./modules/tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
-const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
-const path_1 = __webpack_require__(/*! path */ "path");
-const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
-const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
+const common_1 = __webpack_require__(3);
+const config_1 = __webpack_require__(4);
+const typeorm_1 = __webpack_require__(5);
+const app_controller_1 = __webpack_require__(6);
+const user_module_1 = __webpack_require__(7);
+const tenant_module_1 = __webpack_require__(19);
+const tenant_entity_1 = __webpack_require__(16);
+const path_1 = __webpack_require__(9);
+const throttler_1 = __webpack_require__(23);
+const core_1 = __webpack_require__(1);
+const auth_module_1 = __webpack_require__(24);
+const rbac_module_1 = __webpack_require__(38);
+const utils_module_1 = __webpack_require__(46);
+const ioredis_1 = __webpack_require__(33);
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -80,6 +61,17 @@ exports.AppModule = AppModule = __decorate([
                 entities: [tenant_entity_1.Tenant],
                 synchronize: true,
             }),
+            ioredis_1.RedisModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                inject: [config_1.ConfigService],
+                useFactory: (configService) => ({
+                    type: 'single',
+                    url: configService.get('REDIS_URL', 'redis://localhost:6379'),
+                }),
+            }),
+            utils_module_1.UtilsModule,
+            auth_module_1.AuthModule,
+            rbac_module_1.RbacModule,
             user_module_1.UserModule,
             tenant_module_1.TenantModule,
         ],
@@ -95,11 +87,25 @@ exports.AppModule = AppModule = __decorate([
 
 
 /***/ }),
+/* 3 */
+/***/ ((module) => {
 
-/***/ "./apps/api-gateway/src/filters/global-exception.filter.ts":
-/*!*****************************************************************!*\
-  !*** ./apps/api-gateway/src/filters/global-exception.filter.ts ***!
-  \*****************************************************************/
+module.exports = require("@nestjs/common");
+
+/***/ }),
+/* 4 */
+/***/ ((module) => {
+
+module.exports = require("@nestjs/config");
+
+/***/ }),
+/* 5 */
+/***/ ((module) => {
+
+module.exports = require("@nestjs/typeorm");
+
+/***/ }),
+/* 6 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -109,83 +115,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var GlobalExceptionFilter_1;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GlobalExceptionFilter = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilter {
-    constructor() {
-        this.logger = new common_1.Logger(GlobalExceptionFilter_1.name);
-    }
-    catch(exception, host) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse();
-        const error = exception.getError?.() || exception;
-        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-            const error = exception.getError?.() || exception;
-            console.log('CODE: ', error.code);
-            console.log('details: ', error.details);
-            if (error.code === 3) {
-                const details = JSON.parse(error.details);
-                return response.status(common_1.HttpStatus.BAD_REQUEST).json({
-                    status: 'error',
-                    ...details,
-                    stack: error.stack
-                });
-            }
-            const status = this.getHttpStatus(error.code);
-            try {
-                const details = JSON.parse(error.details);
-                return response.status(status).json({
-                    status: 'error',
-                    ...details,
-                    stack: error.stack
-                });
-            }
-            catch {
-                return response.status(status).json({
-                    status: 'error',
-                    message: error.details,
-                    module: 'unknown',
-                    timestamp: new Date().toISOString(),
-                    stack: error.stack
-                });
-            }
-        }
-        return response.status(error.status).json({
-            status: 'error',
-            message: error.message,
-            timestamp: new Date().toISOString(),
-            stack: error.stack
-        });
-    }
-    getHttpStatus(code) {
-        switch (code) {
-            case 3:
-                return common_1.HttpStatus.BAD_REQUEST;
-            case 5:
-                return common_1.HttpStatus.NOT_FOUND;
-            case 7:
-                return common_1.HttpStatus.FORBIDDEN;
-            case 16:
-                return common_1.HttpStatus.UNAUTHORIZED;
-            default:
-                return common_1.HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-    }
+exports.AppController = void 0;
+const common_1 = __webpack_require__(3);
+let AppController = class AppController {
 };
-exports.GlobalExceptionFilter = GlobalExceptionFilter;
-exports.GlobalExceptionFilter = GlobalExceptionFilter = GlobalExceptionFilter_1 = __decorate([
-    (0, common_1.Catch)()
-], GlobalExceptionFilter);
+exports.AppController = AppController;
+exports.AppController = AppController = __decorate([
+    (0, common_1.Controller)('api')
+], AppController);
 
 
 /***/ }),
-
-/***/ "./apps/api-gateway/src/filters/throttler-exception.filter.ts":
-/*!********************************************************************!*\
-  !*** ./apps/api-gateway/src/filters/throttler-exception.filter.ts ***!
-  \********************************************************************/
+/* 7 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -196,374 +138,56 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ThrottlerExceptionFilter = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
-let ThrottlerExceptionFilter = class ThrottlerExceptionFilter {
-    catch(exception, host) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse();
-        const status = common_1.HttpStatus.TOO_MANY_REQUESTS;
-        response
-            .status(status)
-            .json({
-            status: 'error',
-            message: 'Rate limit exceeded. Please try again later.',
-            timestamp: new Date().toISOString(),
-        });
-    }
+exports.UserModule = void 0;
+const common_1 = __webpack_require__(3);
+const microservices_1 = __webpack_require__(8);
+const path_1 = __webpack_require__(9);
+const user_controller_1 = __webpack_require__(10);
+const config_1 = __webpack_require__(4);
+const tenant_module_1 = __webpack_require__(19);
+let UserModule = class UserModule {
 };
-exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter;
-exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter = __decorate([
-    (0, common_1.Catch)(throttler_1.ThrottlerException)
-], ThrottlerExceptionFilter);
-
-
-/***/ }),
-
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.controller.ts":
-/*!******************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.controller.ts ***!
-  \******************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-var _a, _b, _c, _d, _e;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TenantController = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const tenant_dto_1 = __webpack_require__(/*! ./tenant.dto */ "./apps/api-gateway/src/modules/tenant/tenant.dto.ts");
-let TenantController = class TenantController {
-    constructor(tenantService) {
-        this.tenantService = tenantService;
-    }
-    create(createTenantDto) {
-        console.log('Request came to tenanat controller...');
-        return this.tenantService.create(createTenantDto);
-    }
-    findAll() {
-        return this.tenantService.findAll();
-    }
-    findOne(id) {
-        return this.tenantService.findById(id);
-    }
-};
-exports.TenantController = TenantController;
-__decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof tenant_dto_1.CreateTenantDto !== "undefined" && tenant_dto_1.CreateTenantDto) === "function" ? _b : Object]),
-    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
-], TenantController.prototype, "create", null);
-__decorate([
-    (0, common_1.Get)(),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
-], TenantController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
-], TenantController.prototype, "findOne", null);
-exports.TenantController = TenantController = __decorate([
-    (0, common_1.Controller)('tenants'),
-    __metadata("design:paramtypes", [typeof (_a = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _a : Object])
-], TenantController);
-
-
-/***/ }),
-
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.dto.ts":
-/*!***********************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.dto.ts ***!
-  \***********************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UpdateTenantDto = exports.CreateTenantDto = void 0;
-const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
-const mapped_types_1 = __webpack_require__(/*! @nestjs/mapped-types */ "@nestjs/mapped-types");
-class CreateTenantDto {
-}
-exports.CreateTenantDto = CreateTenantDto;
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], CreateTenantDto.prototype, "name", void 0);
-class UpdateTenantDto extends (0, mapped_types_1.PartialType)(CreateTenantDto) {
-}
-exports.UpdateTenantDto = UpdateTenantDto;
-
-
-/***/ }),
-
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts":
-/*!**************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.entity.ts ***!
-  \**************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var _a, _b;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Tenant = void 0;
-const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
-let Tenant = class Tenant {
-};
-exports.Tenant = Tenant;
-__decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
-    __metadata("design:type", String)
-], Tenant.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Tenant.prototype, "name", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'db_host' }),
-    __metadata("design:type", String)
-], Tenant.prototype, "dbHost", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'db_port' }),
-    __metadata("design:type", Number)
-], Tenant.prototype, "dbPort", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'db_name', unique: true }),
-    __metadata("design:type", String)
-], Tenant.prototype, "dbName", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'db_user', type: 'text' }),
-    __metadata("design:type", String)
-], Tenant.prototype, "dbUser", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'db_password', type: 'text' }),
-    __metadata("design:type", String)
-], Tenant.prototype, "dbPassword", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: true }),
-    __metadata("design:type", Boolean)
-], Tenant.prototype, "active", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
-], Tenant.prototype, "createdAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
-    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
-], Tenant.prototype, "updatedAt", void 0);
-exports.Tenant = Tenant = __decorate([
-    (0, typeorm_1.Entity)('tenants')
-], Tenant);
-
-
-/***/ }),
-
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.module.ts":
-/*!**************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.module.ts ***!
-  \**************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TenantModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
-const tenant_controller_1 = __webpack_require__(/*! ./tenant.controller */ "./apps/api-gateway/src/modules/tenant/tenant.controller.ts");
-const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const tenant_entity_1 = __webpack_require__(/*! ./tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const databaseConfig = (configService) => ({
-    type: 'postgres',
-    name: 'central_db',
-    host: configService.get('PG_HOST', 'localhost'),
-    port: configService.get('PG_PORT', 5432),
-    username: configService.get('PG_USER', 'postgres'),
-    password: configService.get('PG_PASSWORD', '1234'),
-    database: configService.get('PG_MANAGEMENT_DB', 'sspm_central_db'),
-    entities: [tenant_entity_1.Tenant],
-    synchronize: true,
-});
-let TenantModule = class TenantModule {
-};
-exports.TenantModule = TenantModule;
-exports.TenantModule = TenantModule = __decorate([
+exports.UserModule = UserModule;
+exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule,
-            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant], 'central_db'),
+            microservices_1.ClientsModule.registerAsync([
+                {
+                    name: 'USER_PACKAGE',
+                    imports: [config_1.ConfigModule],
+                    useFactory: (configService) => ({
+                        transport: microservices_1.Transport.GRPC,
+                        options: {
+                            package: configService.get('USER_SERVICE_PKG', 'user'),
+                            protoPath: (0, path_1.join)(__dirname, './../../../libs/proto/user.proto'),
+                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
+                        },
+                    }),
+                    inject: [config_1.ConfigService],
+                },
+            ]),
+            tenant_module_1.TenantModule
         ],
-        controllers: [tenant_controller_1.TenantController],
-        providers: [
-            tenant_service_1.TenantService,
-        ],
-        exports: [tenant_service_1.TenantService],
+        controllers: [user_controller_1.UserController],
     })
-], TenantModule);
+], UserModule);
 
 
 /***/ }),
+/* 8 */
+/***/ ((module) => {
 
-/***/ "./apps/api-gateway/src/modules/tenant/tenant.service.ts":
-/*!***************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/tenant/tenant.service.ts ***!
-  \***************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
-var TenantService_1;
-var _a, _b;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TenantService = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
-const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const uuid_1 = __webpack_require__(/*! uuid */ "uuid");
-const tenant_entity_1 = __webpack_require__(/*! ./tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
-let TenantService = TenantService_1 = class TenantService {
-    constructor(tenantRepository, configService) {
-        this.tenantRepository = tenantRepository;
-        this.configService = configService;
-        this.tenantConnections = new Map();
-        this.logger = new common_1.Logger(TenantService_1.name);
-    }
-    async findAll() {
-        return this.tenantRepository.find({
-            select: ['id', 'name', 'dbName', 'createdAt', 'active'],
-        });
-    }
-    async findById(id) {
-        const data = await this.tenantRepository.findOne({
-            where: { id }
-        });
-        return data;
-    }
-    async create(createTenantDto) {
-        const dbName = `tenant_${createTenantDto.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
-        const tenant = new tenant_entity_1.Tenant();
-        tenant.id = (0, uuid_1.v4)();
-        tenant.name = createTenantDto.name;
-        tenant.dbName = dbName;
-        tenant.dbHost = this.configService.get('PG_HOST', 'localhost');
-        tenant.dbPort = this.configService.get('PG_PORT', 5432);
-        console.log(tenant);
-        tenant.dbUser = this.configService.get('PG_USER', 'postgres');
-        tenant.dbPassword = this.configService.get('PG_PASSWORD', '1234');
-        await this.createTenantDatabase(tenant);
-        const savedTenant = await this.tenantRepository.save(tenant);
-        return savedTenant;
-    }
-    async createTenantDatabase(tenant) {
-        const pgConnection = new typeorm_2.DataSource({
-            type: 'postgres',
-            host: tenant.dbHost,
-            port: tenant.dbPort,
-            username: tenant.dbUser,
-            password: tenant.dbPassword,
-            database: 'postgres',
-        });
-        console.log({
-            type: 'postgres',
-            host: tenant.dbHost,
-            port: tenant.dbPort,
-            username: tenant.dbUser,
-            password: tenant.dbPassword,
-            database: 'postgres',
-        });
-        await pgConnection.initialize();
-        console.log('pgConnection initialized...');
-        try {
-            await pgConnection.query(`CREATE DATABASE ${tenant.dbName}`);
-            this.logger.log(`Created database ${tenant.dbName}`);
-        }
-        catch (error) {
-            this.logger.error(`Failed to create database ${tenant.dbName}`, error);
-            throw error;
-        }
-        finally {
-            await pgConnection.destroy();
-        }
-    }
-    async update(id, tenant) {
-        await this.tenantRepository.update(id, tenant);
-        return this.findById(id);
-    }
-    async delete(id) {
-        await this.tenantRepository.delete(id);
-    }
-};
-exports.TenantService = TenantService;
-exports.TenantService = TenantService = TenantService_1 = __decorate([
-    (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(tenant_entity_1.Tenant, 'central_db')),
-    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
-], TenantService);
-
+module.exports = require("@nestjs/microservices");
 
 /***/ }),
+/* 9 */
+/***/ ((module) => {
 
-/***/ "./apps/api-gateway/src/modules/user/user.controller.ts":
-/*!**************************************************************!*\
-  !*** ./apps/api-gateway/src/modules/user/user.controller.ts ***!
-  \**************************************************************/
+module.exports = require("path");
+
+/***/ }),
+/* 10 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -582,13 +206,13 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserController = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const grpc_js_1 = __webpack_require__(/*! @grpc/grpc-js */ "@grpc/grpc-js");
-const createError = __webpack_require__(/*! http-errors */ "http-errors");
-const tenant_service_1 = __webpack_require__(/*! ../tenant/tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
+const common_1 = __webpack_require__(3);
+const common_2 = __webpack_require__(3);
+const microservices_1 = __webpack_require__(8);
+const grpc_js_1 = __webpack_require__(11);
+const createError = __webpack_require__(12);
+const tenant_service_1 = __webpack_require__(13);
+const user_dto_1 = __webpack_require__(17);
 let UserController = class UserController {
     constructor(client, tenantService) {
         this.client = client;
@@ -683,11 +307,19 @@ exports.UserController = UserController = __decorate([
 
 
 /***/ }),
+/* 11 */
+/***/ ((module) => {
 
-/***/ "./apps/api-gateway/src/modules/user/user.module.ts":
-/*!**********************************************************!*\
-  !*** ./apps/api-gateway/src/modules/user/user.module.ts ***!
-  \**********************************************************/
+module.exports = require("@grpc/grpc-js");
+
+/***/ }),
+/* 12 */
+/***/ ((module) => {
+
+module.exports = require("http-errors");
+
+/***/ }),
+/* 13 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -697,49 +329,184 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UserModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const path_1 = __webpack_require__(/*! path */ "path");
-const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/api-gateway/src/modules/user/user.controller.ts");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const tenant_module_1 = __webpack_require__(/*! ../tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
-let UserModule = class UserModule {
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-exports.UserModule = UserModule;
-exports.UserModule = UserModule = __decorate([
-    (0, common_1.Module)({
-        imports: [
-            config_1.ConfigModule,
-            microservices_1.ClientsModule.registerAsync([
-                {
-                    name: 'USER_PACKAGE',
-                    imports: [config_1.ConfigModule],
-                    useFactory: (configService) => ({
-                        transport: microservices_1.Transport.GRPC,
-                        options: {
-                            package: configService.get('USER_SERVICE_PKG', 'user'),
-                            protoPath: (0, path_1.join)(__dirname, './../../../libs/proto/user.proto'),
-                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
-                        },
-                    }),
-                    inject: [config_1.ConfigService],
-                },
-            ]),
-            tenant_module_1.TenantModule
-        ],
-        controllers: [user_controller_1.UserController],
-    })
-], UserModule);
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var TenantService_1;
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TenantService = void 0;
+const common_1 = __webpack_require__(3);
+const typeorm_1 = __webpack_require__(5);
+const typeorm_2 = __webpack_require__(14);
+const config_1 = __webpack_require__(4);
+const uuid_1 = __webpack_require__(15);
+const tenant_entity_1 = __webpack_require__(16);
+let TenantService = TenantService_1 = class TenantService {
+    constructor(tenantRepository, configService) {
+        this.tenantRepository = tenantRepository;
+        this.configService = configService;
+        this.tenantConnections = new Map();
+        this.logger = new common_1.Logger(TenantService_1.name);
+    }
+    async findAll() {
+        return this.tenantRepository.find({
+            select: ['id', 'name', 'dbName', 'createdAt', 'active'],
+        });
+    }
+    async findById(id) {
+        const data = await this.tenantRepository.findOne({
+            where: { id }
+        });
+        return data;
+    }
+    async create(createTenantDto) {
+        const dbName = `tenant_${createTenantDto.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
+        const tenant = new tenant_entity_1.Tenant();
+        tenant.id = (0, uuid_1.v4)();
+        tenant.name = createTenantDto.name;
+        tenant.dbName = dbName;
+        tenant.dbHost = this.configService.get('PG_HOST', 'localhost');
+        tenant.dbPort = this.configService.get('PG_PORT', 5432);
+        console.log(tenant);
+        tenant.dbUser = this.configService.get('PG_USER', 'postgres');
+        tenant.dbPassword = this.configService.get('PG_PASSWORD', '1234');
+        await this.createTenantDatabase(tenant);
+        const savedTenant = await this.tenantRepository.save(tenant);
+        return savedTenant;
+    }
+    async createTenantDatabase(tenant) {
+        const pgConnection = new typeorm_2.DataSource({
+            type: 'postgres',
+            host: tenant.dbHost,
+            port: tenant.dbPort,
+            username: tenant.dbUser,
+            password: tenant.dbPassword,
+            database: 'postgres',
+        });
+        console.log({
+            type: 'postgres',
+            host: tenant.dbHost,
+            port: tenant.dbPort,
+            username: tenant.dbUser,
+            password: tenant.dbPassword,
+            database: 'postgres',
+        });
+        await pgConnection.initialize();
+        console.log('pgConnection initialized...');
+        try {
+            await pgConnection.query(`CREATE DATABASE ${tenant.dbName}`);
+            this.logger.log(`Created database ${tenant.dbName}`);
+        }
+        catch (error) {
+            this.logger.error(`Failed to create database ${tenant.dbName}`, error);
+            throw error;
+        }
+        finally {
+            await pgConnection.destroy();
+        }
+    }
+    async update(id, tenant) {
+        await this.tenantRepository.update(id, tenant);
+        return this.findById(id);
+    }
+    async delete(id) {
+        await this.tenantRepository.delete(id);
+    }
+};
+exports.TenantService = TenantService;
+exports.TenantService = TenantService = TenantService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(tenant_entity_1.Tenant, 'central_db')),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
+], TenantService);
 
 
 /***/ }),
+/* 14 */
+/***/ ((module) => {
 
-/***/ "./libs/dto/user.dto.ts":
-/*!******************************!*\
-  !*** ./libs/dto/user.dto.ts ***!
-  \******************************/
+module.exports = require("typeorm");
+
+/***/ }),
+/* 15 */
+/***/ ((module) => {
+
+module.exports = require("uuid");
+
+/***/ }),
+/* 16 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Tenant = void 0;
+const typeorm_1 = __webpack_require__(14);
+let Tenant = class Tenant {
+};
+exports.Tenant = Tenant;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], Tenant.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Tenant.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'db_host' }),
+    __metadata("design:type", String)
+], Tenant.prototype, "dbHost", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'db_port' }),
+    __metadata("design:type", Number)
+], Tenant.prototype, "dbPort", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'db_name', unique: true }),
+    __metadata("design:type", String)
+], Tenant.prototype, "dbName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'db_user', type: 'text' }),
+    __metadata("design:type", String)
+], Tenant.prototype, "dbUser", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'db_password', type: 'text' }),
+    __metadata("design:type", String)
+], Tenant.prototype, "dbPassword", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], Tenant.prototype, "active", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], Tenant.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], Tenant.prototype, "updatedAt", void 0);
+exports.Tenant = Tenant = __decorate([
+    (0, typeorm_1.Entity)('tenants')
+], Tenant);
+
+
+/***/ }),
+/* 17 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -754,7 +521,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UpdateUserDto = exports.CreateUserDto = void 0;
-const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
+const class_validator_1 = __webpack_require__(18);
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
@@ -784,138 +551,1610 @@ __decorate([
 
 
 /***/ }),
-
-/***/ "@grpc/grpc-js":
-/*!********************************!*\
-  !*** external "@grpc/grpc-js" ***!
-  \********************************/
-/***/ ((module) => {
-
-module.exports = require("@grpc/grpc-js");
-
-/***/ }),
-
-/***/ "@nestjs/common":
-/*!*********************************!*\
-  !*** external "@nestjs/common" ***!
-  \*********************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/common");
-
-/***/ }),
-
-/***/ "@nestjs/config":
-/*!*********************************!*\
-  !*** external "@nestjs/config" ***!
-  \*********************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/config");
-
-/***/ }),
-
-/***/ "@nestjs/core":
-/*!*******************************!*\
-  !*** external "@nestjs/core" ***!
-  \*******************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/core");
-
-/***/ }),
-
-/***/ "@nestjs/mapped-types":
-/*!***************************************!*\
-  !*** external "@nestjs/mapped-types" ***!
-  \***************************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/mapped-types");
-
-/***/ }),
-
-/***/ "@nestjs/microservices":
-/*!****************************************!*\
-  !*** external "@nestjs/microservices" ***!
-  \****************************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/microservices");
-
-/***/ }),
-
-/***/ "@nestjs/throttler":
-/*!************************************!*\
-  !*** external "@nestjs/throttler" ***!
-  \************************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/throttler");
-
-/***/ }),
-
-/***/ "@nestjs/typeorm":
-/*!**********************************!*\
-  !*** external "@nestjs/typeorm" ***!
-  \**********************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/typeorm");
-
-/***/ }),
-
-/***/ "class-validator":
-/*!**********************************!*\
-  !*** external "class-validator" ***!
-  \**********************************/
+/* 18 */
 /***/ ((module) => {
 
 module.exports = require("class-validator");
 
 /***/ }),
+/* 19 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
-/***/ "http-errors":
-/*!******************************!*\
-  !*** external "http-errors" ***!
-  \******************************/
-/***/ ((module) => {
 
-module.exports = require("http-errors");
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TenantModule = void 0;
+const common_1 = __webpack_require__(3);
+const typeorm_1 = __webpack_require__(5);
+const tenant_controller_1 = __webpack_require__(20);
+const tenant_service_1 = __webpack_require__(13);
+const tenant_entity_1 = __webpack_require__(16);
+const config_1 = __webpack_require__(4);
+let TenantModule = class TenantModule {
+};
+exports.TenantModule = TenantModule;
+exports.TenantModule = TenantModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            config_1.ConfigModule,
+            typeorm_1.TypeOrmModule.forFeature([tenant_entity_1.Tenant], 'central_db'),
+        ],
+        controllers: [tenant_controller_1.TenantController],
+        providers: [
+            tenant_service_1.TenantService,
+        ],
+        exports: [tenant_service_1.TenantService],
+    })
+], TenantModule);
+
 
 /***/ }),
+/* 20 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
-/***/ "typeorm":
-/*!**************************!*\
-  !*** external "typeorm" ***!
-  \**************************/
-/***/ ((module) => {
 
-module.exports = require("typeorm");
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TenantController = void 0;
+const common_1 = __webpack_require__(3);
+const tenant_service_1 = __webpack_require__(13);
+const tenant_dto_1 = __webpack_require__(21);
+let TenantController = class TenantController {
+    constructor(tenantService) {
+        this.tenantService = tenantService;
+    }
+    create(createTenantDto) {
+        console.log('Request came to tenanat controller...');
+        return this.tenantService.create(createTenantDto);
+    }
+    findAll() {
+        return this.tenantService.findAll();
+    }
+    findOne(id) {
+        return this.tenantService.findById(id);
+    }
+};
+exports.TenantController = TenantController;
+__decorate([
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof tenant_dto_1.CreateTenantDto !== "undefined" && tenant_dto_1.CreateTenantDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], TenantController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], TenantController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], TenantController.prototype, "findOne", null);
+exports.TenantController = TenantController = __decorate([
+    (0, common_1.Controller)('tenants'),
+    __metadata("design:paramtypes", [typeof (_a = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _a : Object])
+], TenantController);
+
 
 /***/ }),
+/* 21 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
-/***/ "uuid":
-/*!***********************!*\
-  !*** external "uuid" ***!
-  \***********************/
-/***/ ((module) => {
 
-module.exports = require("uuid");
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UpdateTenantDto = exports.CreateTenantDto = void 0;
+const class_validator_1 = __webpack_require__(18);
+const mapped_types_1 = __webpack_require__(22);
+class CreateTenantDto {
+}
+exports.CreateTenantDto = CreateTenantDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "name", void 0);
+class UpdateTenantDto extends (0, mapped_types_1.PartialType)(CreateTenantDto) {
+}
+exports.UpdateTenantDto = UpdateTenantDto;
+
 
 /***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
+/* 22 */
 /***/ ((module) => {
 
-module.exports = require("path");
+module.exports = require("@nestjs/mapped-types");
+
+/***/ }),
+/* 23 */
+/***/ ((module) => {
+
+module.exports = require("@nestjs/throttler");
+
+/***/ }),
+/* 24 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuthModule = void 0;
+const common_1 = __webpack_require__(3);
+const auth_controller_1 = __webpack_require__(25);
+const auth_service_1 = __webpack_require__(27);
+const cognito_service_1 = __webpack_require__(28);
+const rbac_module_1 = __webpack_require__(38);
+let AuthModule = class AuthModule {
+};
+exports.AuthModule = AuthModule;
+exports.AuthModule = AuthModule = __decorate([
+    (0, common_1.Module)({
+        imports: [rbac_module_1.RbacModule],
+        controllers: [auth_controller_1.AuthController],
+        providers: [auth_service_1.AuthService, cognito_service_1.CognitoService],
+    })
+], AuthModule);
+
+
+/***/ }),
+/* 25 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuthController = void 0;
+const common_1 = __webpack_require__(3);
+const auth_dto_1 = __webpack_require__(26);
+const auth_service_1 = __webpack_require__(27);
+let AuthController = class AuthController {
+    constructor(authService) {
+        this.authService = authService;
+    }
+    async signUp(signUpDto) {
+        return this.authService.signUp(signUpDto.email, signUpDto.password, signUpDto.name);
+    }
+    async confirmSignUp(confirmSignUpDto) {
+        return this.authService.confirmSignUp(confirmSignUpDto.email, confirmSignUpDto.confirmationCode);
+    }
+    async signIn(signInDto) {
+        return this.authService.signIn(signInDto.email, signInDto.password);
+    }
+    async setupMFA(setupMFADto) {
+        return this.authService.initiateMfaSetup(setupMFADto.session);
+    }
+    async verifyMFASetup(verifyMFASetupDto) {
+        return this.authService.verifyMFASetup(verifyMFASetupDto.session, verifyMFASetupDto.totpCode);
+    }
+    async completeMFASetup(verifyMFADto) {
+        return this.authService.respondToMFASetupChallenge(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
+    }
+    async verifyMFA(verifyMFADto) {
+        return this.authService.respondToMFAChallenge(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
+    }
+    async globalSignOut(globalSignOutDto) {
+        return this.authService.globalSignOut(globalSignOutDto);
+    }
+    async refreshToken(refreshTokenDto) {
+        return this.authService.refreshToken(refreshTokenDto.refreshToken);
+    }
+};
+exports.AuthController = AuthController;
+__decorate([
+    (0, common_1.Post)('signup'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof auth_dto_1.SignUpDto !== "undefined" && auth_dto_1.SignUpDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "signUp", null);
+__decorate([
+    (0, common_1.Post)('confirm-signup'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_c = typeof auth_dto_1.ConfirmSignUpDto !== "undefined" && auth_dto_1.ConfirmSignUpDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "confirmSignUp", null);
+__decorate([
+    (0, common_1.Post)('signin'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_d = typeof auth_dto_1.SignInDto !== "undefined" && auth_dto_1.SignInDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "signIn", null);
+__decorate([
+    (0, common_1.Post)('initiate-mfa-setup'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_e = typeof auth_dto_1.SetupMFADto !== "undefined" && auth_dto_1.SetupMFADto) === "function" ? _e : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "setupMFA", null);
+__decorate([
+    (0, common_1.Post)('verify-mfa-setup'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_f = typeof auth_dto_1.VerifyMFASetupDto !== "undefined" && auth_dto_1.VerifyMFASetupDto) === "function" ? _f : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyMFASetup", null);
+__decorate([
+    (0, common_1.Post)('complete-mfa-setup'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_g = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _g : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "completeMFASetup", null);
+__decorate([
+    (0, common_1.Post)('verify-mfa'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_h = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _h : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyMFA", null);
+__decorate([
+    (0, common_1.Post)('global-signout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_j = typeof auth_dto_1.GlobalSignOutDto !== "undefined" && auth_dto_1.GlobalSignOutDto) === "function" ? _j : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "globalSignOut", null);
+__decorate([
+    (0, common_1.Post)('refresh-token'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_k = typeof auth_dto_1.RefreshTokenDto !== "undefined" && auth_dto_1.RefreshTokenDto) === "function" ? _k : Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refreshToken", null);
+exports.AuthController = AuthController = __decorate([
+    (0, common_1.Controller)('auth'),
+    __metadata("design:paramtypes", [typeof (_a = typeof auth_service_1.AuthService !== "undefined" && auth_service_1.AuthService) === "function" ? _a : Object])
+], AuthController);
+
+
+/***/ }),
+/* 26 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ChangePasswordDto = exports.RefreshTokenDto = exports.GlobalSignOutDto = exports.VerifyMFASetupDto = exports.SetupMFADto = exports.VerifyMFADto = exports.SignInDto = exports.ConfirmSignUpDto = exports.SignUpDto = void 0;
+const class_validator_1 = __webpack_require__(18);
+class SignUpDto {
+}
+exports.SignUpDto = SignUpDto;
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters long' }),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    }),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Name must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Name is required' }),
+    (0, class_validator_1.MinLength)(2, { message: 'Name must be at least 2 characters long' }),
+    (0, class_validator_1.MaxLength)(50, { message: 'Name must not exceed 50 characters' }),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "name", void 0);
+class ConfirmSignUpDto {
+}
+exports.ConfirmSignUpDto = ConfirmSignUpDto;
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], ConfirmSignUpDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Confirmation code must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Confirmation code is required' }),
+    (0, class_validator_1.Matches)(/^\d{6}$/, { message: 'Confirmation code must be exactly 6 digits' }),
+    __metadata("design:type", String)
+], ConfirmSignUpDto.prototype, "confirmationCode", void 0);
+class SignInDto {
+}
+exports.SignInDto = SignInDto;
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], SignInDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    __metadata("design:type", String)
+], SignInDto.prototype, "password", void 0);
+class VerifyMFADto {
+}
+exports.VerifyMFADto = VerifyMFADto;
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], VerifyMFADto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Session must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Session is required' }),
+    __metadata("design:type", String)
+], VerifyMFADto.prototype, "session", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'TOTP code must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'TOTP code is required' }),
+    (0, class_validator_1.Matches)(/^\d{6}$/, { message: 'TOTP code must be exactly 6 digits' }),
+    __metadata("design:type", String)
+], VerifyMFADto.prototype, "totpCode", void 0);
+class SetupMFADto {
+}
+exports.SetupMFADto = SetupMFADto;
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Session must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Session is required' }),
+    __metadata("design:type", String)
+], SetupMFADto.prototype, "session", void 0);
+class VerifyMFASetupDto {
+}
+exports.VerifyMFASetupDto = VerifyMFASetupDto;
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Session must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Session is required' }),
+    __metadata("design:type", String)
+], VerifyMFASetupDto.prototype, "session", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'TOTP code must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'TOTP code is required' }),
+    (0, class_validator_1.Matches)(/^\d{6}$/, { message: 'TOTP code must be exactly 6 digits' }),
+    __metadata("design:type", String)
+], VerifyMFASetupDto.prototype, "totpCode", void 0);
+class GlobalSignOutDto {
+}
+exports.GlobalSignOutDto = GlobalSignOutDto;
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Access Token must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Access Token is required' }),
+    __metadata("design:type", String)
+], GlobalSignOutDto.prototype, "accessToken", void 0);
+class RefreshTokenDto {
+}
+exports.RefreshTokenDto = RefreshTokenDto;
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Refresh Token must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Refresh Token is required' }),
+    __metadata("design:type", String)
+], RefreshTokenDto.prototype, "refreshToken", void 0);
+class ChangePasswordDto {
+}
+exports.ChangePasswordDto = ChangePasswordDto;
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], ChangePasswordDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'Current Password must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Current Password is required' }),
+    __metadata("design:type", String)
+], ChangePasswordDto.prototype, "currentPassword", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'New Password must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'New Password is required' }),
+    __metadata("design:type", String)
+], ChangePasswordDto.prototype, "newPassword", void 0);
+
+
+/***/ }),
+/* 27 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AuthService = void 0;
+const common_1 = __webpack_require__(3);
+const cognito_service_1 = __webpack_require__(28);
+const rbac_service_1 = __webpack_require__(36);
+let AuthService = class AuthService {
+    constructor(cognitoService, rbacService) {
+        this.cognitoService = cognitoService;
+        this.rbacService = rbacService;
+    }
+    async signUp(email, password, name) {
+        return this.cognitoService.signUp(email, password, name);
+    }
+    async confirmSignUp(email, confirmationCode) {
+        return this.cognitoService.confirmSignUp(email, confirmationCode);
+    }
+    async signIn(email, password) {
+        return this.cognitoService.signIn(email, password);
+    }
+    async initiateMfaSetup(session) {
+        return this.cognitoService.initiateMfaSetup(session);
+    }
+    async verifyMFASetup(session, totpCode) {
+        return this.cognitoService.verifyMFASetup(session, totpCode);
+    }
+    async respondToMFASetupChallenge(session, totpCode, email) {
+        return this.cognitoService.respondToMFASetupChallenge(session, totpCode, email);
+    }
+    async respondToMFAChallenge(session, totpCode, email) {
+        return this.cognitoService.respondToMFAChallenge(session, totpCode, email);
+    }
+    async forgotPassword(email) {
+        return this.cognitoService.forgotPassword(email);
+    }
+    async confirmForgotPassword(email, password, confirmationCode) {
+        return this.cognitoService.confirmForgotPassword(email, password, confirmationCode);
+    }
+    async changePassword(changePasswordDto) {
+        const { email, currentPassword, newPassword } = changePasswordDto;
+        return this.cognitoService.changePassword(email, currentPassword, newPassword);
+    }
+    async assignDefaultRole(email) {
+        await this.rbacService.assignRoleToUser(email, 'user');
+    }
+    async globalSignOut(globalSignOutDto) {
+        const { accessToken } = globalSignOutDto;
+        return this.cognitoService.globalSignOut(accessToken);
+    }
+    async forcedGlobalSignOut(email) {
+        return this.cognitoService.forcedGlobalSignOut(email);
+    }
+    async refreshToken(refreshToken) {
+        return this.cognitoService.refreshToken(refreshToken);
+    }
+};
+exports.AuthService = AuthService;
+exports.AuthService = AuthService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _a : Object, typeof (_b = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _b : Object])
+], AuthService);
+
+
+/***/ }),
+/* 28 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CognitoService = void 0;
+const common_1 = __webpack_require__(3);
+const crypto = __webpack_require__(29);
+const config_1 = __webpack_require__(4);
+const client_cognito_identity_provider_1 = __webpack_require__(30);
+const cognito_exceptions_1 = __webpack_require__(31);
+const token_revocation_service_1 = __webpack_require__(32);
+let CognitoService = class CognitoService {
+    constructor(configService, tokenRevocationService) {
+        this.configService = configService;
+        this.tokenRevocationService = tokenRevocationService;
+        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.clientId = this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
+        this.clientSecret = this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
+        this.cognitoClient = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
+            region: this.configService.get('AWS_REGION'),
+        });
+    }
+    handleCognitoError(error) {
+        if (error.name === 'UsernameExistsException') {
+            throw new cognito_exceptions_1.UsernameExistsException();
+        }
+        else if (error.name === 'InvalidPasswordException') {
+            throw new cognito_exceptions_1.InvalidPasswordException();
+        }
+        else if (error.name === 'InvalidParameterException') {
+            throw new cognito_exceptions_1.InvalidParameterException(error.message);
+        }
+        else if (error.name === 'TooManyRequestsException') {
+            throw new cognito_exceptions_1.TooManyRequestsException();
+        }
+        console.log('Re-throw the original error', error);
+        throw error;
+    }
+    generateSecretHash(username) {
+        return crypto
+            .createHmac('SHA256', this.clientSecret)
+            .update(username + this.clientId)
+            .digest('base64');
+    }
+    async signUp(email, password, name) {
+        const params = {
+            ClientId: this.clientId,
+            Username: email,
+            Password: password,
+            SecretHash: this.generateSecretHash(email),
+            UserAttributes: [
+                {
+                    Name: 'email',
+                    Value: email,
+                },
+                {
+                    Name: 'name',
+                    Value: name,
+                },
+            ],
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.SignUpCommand(params);
+            const result = await this.cognitoClient.send(command);
+            return {
+                userSub: result.UserSub,
+                message: 'User registration successful. Please check your email for verification code.',
+            };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async confirmSignUp(email, confirmationCode) {
+        const params = {
+            ClientId: this.clientId,
+            Username: email,
+            ConfirmationCode: confirmationCode,
+            SecretHash: this.generateSecretHash(email),
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.ConfirmSignUpCommand(params);
+            await this.cognitoClient.send(command);
+            return { message: 'Email verification successful' };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async signIn(email, password) {
+        const params = {
+            ClientId: this.clientId,
+            AuthFlow: client_cognito_identity_provider_1.AuthFlowType.USER_PASSWORD_AUTH,
+            AuthParameters: {
+                USERNAME: email,
+                PASSWORD: password,
+                SECRET_HASH: this.generateSecretHash(email),
+            },
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.InitiateAuthCommand(params);
+            const result = await this.cognitoClient.send(command);
+            if (result.ChallengeName === client_cognito_identity_provider_1.ChallengeNameType.SOFTWARE_TOKEN_MFA) {
+                return {
+                    challengeName: result.ChallengeName,
+                    session: result.Session,
+                    message: 'MFA challenge required. Please provide TOTP code.',
+                };
+            }
+            if (result.ChallengeName === client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP) {
+                return {
+                    challengeName: result.ChallengeName,
+                    session: result.Session,
+                    message: 'MFA setup required. Please set up TOTP first.',
+                };
+            }
+            return {
+                accessToken: result.AuthenticationResult?.AccessToken,
+                refreshToken: result.AuthenticationResult?.RefreshToken,
+                idToken: result.AuthenticationResult?.IdToken,
+            };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async initiateMfaSetup(session) {
+        const params = {
+            Session: session,
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.AssociateSoftwareTokenCommand(params);
+            const result = await this.cognitoClient.send(command);
+            const secretCode = result.SecretCode;
+            const qrCodeUrl = `otpauth://totp/YourApp:user?secret=${secretCode}&issuer=YourApp`;
+            return {
+                secretCode,
+                qrCodeUrl,
+                session: result.Session,
+                message: 'Scan this QR code with your authenticator app',
+            };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async verifyMFASetup(session, totpCode) {
+        const params = {
+            Session: session,
+            UserCode: totpCode,
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.VerifySoftwareTokenCommand(params);
+            const result = await this.cognitoClient.send(command);
+            if (result.Status === 'SUCCESS') {
+                return {
+                    status: result.Status,
+                    session: result.Session,
+                    message: 'MFA setup completed successfully',
+                };
+            }
+            throw new common_1.BadRequestException('Invalid TOTP code');
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async respondToMFASetupChallenge(session, totpCode, email) {
+        const params = {
+            ClientId: this.clientId,
+            ChallengeName: client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP,
+            Session: session,
+            ChallengeResponses: {
+                USERNAME: email,
+                SOFTWARE_TOKEN_MFA_CODE: totpCode,
+                SECRET_HASH: this.generateSecretHash(email),
+            },
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.RespondToAuthChallengeCommand(params);
+            const result = await this.cognitoClient.send(command);
+            if (result.AuthenticationResult?.AccessToken) {
+                try {
+                    const mfaParams = {
+                        AccessToken: result.AuthenticationResult.AccessToken,
+                        SoftwareTokenMfaSettings: {
+                            Enabled: true,
+                            PreferredMfa: true,
+                        },
+                    };
+                    const mfaCommand = new client_cognito_identity_provider_1.SetUserMFAPreferenceCommand(mfaParams);
+                    await this.cognitoClient.send(mfaCommand);
+                }
+                catch (mfaError) {
+                    console.error('Failed to set MFA preferences:', mfaError);
+                }
+            }
+            return {
+                accessToken: result.AuthenticationResult?.AccessToken,
+                refreshToken: result.AuthenticationResult?.RefreshToken,
+                idToken: result.AuthenticationResult?.IdToken,
+            };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async respondToMFAChallenge(session, totpCode, email) {
+        const params = {
+            ClientId: this.clientId,
+            ChallengeName: client_cognito_identity_provider_1.ChallengeNameType.SOFTWARE_TOKEN_MFA,
+            Session: session,
+            ChallengeResponses: {
+                USERNAME: email,
+                SOFTWARE_TOKEN_MFA_CODE: totpCode,
+                SECRET_HASH: this.generateSecretHash(email),
+            },
+        };
+        try {
+            const command = new client_cognito_identity_provider_1.RespondToAuthChallengeCommand(params);
+            const result = await this.cognitoClient.send(command);
+            return {
+                accessToken: result.AuthenticationResult?.AccessToken,
+                refreshToken: result.AuthenticationResult?.RefreshToken,
+                idToken: result.AuthenticationResult?.IdToken,
+            };
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async forgotPassword(email) {
+        try {
+            const secretHash = this.generateSecretHash(email);
+            const command = new client_cognito_identity_provider_1.ForgotPasswordCommand({
+                ClientId: this.clientId,
+                Username: email,
+                SecretHash: secretHash,
+            });
+            const response = await this.cognitoClient.send(command);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async confirmForgotPassword(email, password, confirmationCode) {
+        try {
+            const secretHash = this.generateSecretHash(email);
+            const command = new client_cognito_identity_provider_1.ConfirmForgotPasswordCommand({
+                ClientId: this.clientId,
+                Username: email,
+                Password: password,
+                ConfirmationCode: confirmationCode,
+                SecretHash: secretHash,
+            });
+            const response = await this.cognitoClient.send(command);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async changePassword(email, currentPassword, newPassword) {
+        try {
+            const authResponse = await this.signIn(email, currentPassword);
+            if (!authResponse?.accessToken) {
+                throw new Error('Authentication failed');
+            }
+            const { accessToken } = authResponse;
+            const command = new client_cognito_identity_provider_1.ChangePasswordCommand({
+                AccessToken: accessToken,
+                PreviousPassword: currentPassword,
+                ProposedPassword: newPassword,
+            });
+            const response = await this.cognitoClient.send(command);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async globalSignOut(accessToken) {
+        try {
+            const command = new client_cognito_identity_provider_1.GlobalSignOutCommand({
+                AccessToken: accessToken,
+            });
+            const response = await this.cognitoClient.send(command);
+            await this.tokenRevocationService.revokeToken(accessToken);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async forcedGlobalSignOut(email) {
+        try {
+            const command = new client_cognito_identity_provider_1.AdminUserGlobalSignOutCommand({
+                UserPoolId: this.userPoolId,
+                Username: email,
+            });
+            const response = await this.cognitoClient.send(command);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+    async refreshToken(refreshToken) {
+        try {
+            const command = new client_cognito_identity_provider_1.InitiateAuthCommand({
+                AuthFlow: 'REFRESH_TOKEN_AUTH',
+                ClientId: this.clientId,
+                AuthParameters: {
+                    REFRESH_TOKEN: refreshToken,
+                    SECRET_HASH: this.clientSecret,
+                },
+            });
+            const response = await this.cognitoClient.send(command);
+            return response;
+        }
+        catch (error) {
+            this.handleCognitoError(error);
+        }
+    }
+};
+exports.CognitoService = CognitoService;
+exports.CognitoService = CognitoService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _a : Object, typeof (_b = typeof token_revocation_service_1.TokenRevocationService !== "undefined" && token_revocation_service_1.TokenRevocationService) === "function" ? _b : Object])
+], CognitoService);
+
+
+/***/ }),
+/* 29 */
+/***/ ((module) => {
+
+module.exports = require("crypto");
+
+/***/ }),
+/* 30 */
+/***/ ((module) => {
+
+module.exports = require("@aws-sdk/client-cognito-identity-provider");
+
+/***/ }),
+/* 31 */
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.InvalidParameterException = exports.TooManyRequestsException = exports.LimitExceededException = exports.ExpiredCodeException = exports.CodeMismatchException = exports.UsernameExistsException = exports.NotAuthorizedException = exports.InvalidPasswordException = exports.UserNotConfirmedException = exports.UserNotFoundException = exports.CognitoException = void 0;
+class CognitoException extends Error {
+    constructor(message, statusCode, errorCode) {
+        super(message);
+        this.message = message;
+        this.statusCode = statusCode;
+        this.errorCode = errorCode;
+        this.name = 'CognitoException';
+    }
+}
+exports.CognitoException = CognitoException;
+class UserNotFoundException extends CognitoException {
+    constructor() {
+        super('User does not exist', 404, 'USER_NOT_FOUND');
+    }
+}
+exports.UserNotFoundException = UserNotFoundException;
+class UserNotConfirmedException extends CognitoException {
+    constructor() {
+        super('User is not confirmed', 400, 'USER_NOT_CONFIRMED');
+    }
+}
+exports.UserNotConfirmedException = UserNotConfirmedException;
+class InvalidPasswordException extends CognitoException {
+    constructor() {
+        super('Password does not conform to policy', 400, 'INVALID_PASSWORD');
+    }
+}
+exports.InvalidPasswordException = InvalidPasswordException;
+class NotAuthorizedException extends CognitoException {
+    constructor(message = 'Incorrect username or password') {
+        super(message, 401, 'NOT_AUTHORIZED');
+    }
+}
+exports.NotAuthorizedException = NotAuthorizedException;
+class UsernameExistsException extends CognitoException {
+    constructor() {
+        super('Username already exists', 409, 'USERNAME_EXISTS');
+    }
+}
+exports.UsernameExistsException = UsernameExistsException;
+class CodeMismatchException extends CognitoException {
+    constructor() {
+        super('Invalid verification code', 400, 'CODE_MISMATCH');
+    }
+}
+exports.CodeMismatchException = CodeMismatchException;
+class ExpiredCodeException extends CognitoException {
+    constructor() {
+        super('Verification code has expired', 400, 'EXPIRED_CODE');
+    }
+}
+exports.ExpiredCodeException = ExpiredCodeException;
+class LimitExceededException extends CognitoException {
+    constructor() {
+        super('Attempt limit exceeded, please try again later', 429, 'LIMIT_EXCEEDED');
+    }
+}
+exports.LimitExceededException = LimitExceededException;
+class TooManyRequestsException extends CognitoException {
+    constructor() {
+        super('Too many requests, please try again later', 429, 'TOO_MANY_REQUESTS');
+    }
+}
+exports.TooManyRequestsException = TooManyRequestsException;
+class InvalidParameterException extends CognitoException {
+    constructor(message = 'Invalid parameter') {
+        super(message, 400, 'INVALID_PARAMETER');
+    }
+}
+exports.InvalidParameterException = InvalidParameterException;
+
+
+/***/ }),
+/* 32 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TokenRevocationService = void 0;
+const common_1 = __webpack_require__(3);
+const ioredis_1 = __webpack_require__(33);
+const ioredis_2 = __webpack_require__(34);
+const jwt_decode_1 = __webpack_require__(35);
+let TokenRevocationService = class TokenRevocationService {
+    constructor(redis) {
+        this.redis = redis;
+    }
+    async revokeToken(token) {
+        const decodedToken = (0, jwt_decode_1.jwtDecode)(token);
+        const expiryTimeInSeconds = (decodedToken.exp || 0) - Math.floor(Date.now() / 1000);
+        if (expiryTimeInSeconds > 0) {
+            await this.redis.set(`revoked:${token}`, '1', 'EX', expiryTimeInSeconds);
+        }
+    }
+    async isTokenRevoked(token) {
+        const result = await this.redis.get(`revoked:${token}`);
+        return result === '1';
+    }
+};
+exports.TokenRevocationService = TokenRevocationService;
+exports.TokenRevocationService = TokenRevocationService = __decorate([
+    (0, common_1.Global)(),
+    (0, common_1.Injectable)(),
+    __param(0, (0, ioredis_1.InjectRedis)()),
+    __metadata("design:paramtypes", [typeof (_a = typeof ioredis_2.Redis !== "undefined" && ioredis_2.Redis) === "function" ? _a : Object])
+], TokenRevocationService);
+
+
+/***/ }),
+/* 33 */
+/***/ ((module) => {
+
+module.exports = require("@nestjs-modules/ioredis");
+
+/***/ }),
+/* 34 */
+/***/ ((module) => {
+
+module.exports = require("ioredis");
+
+/***/ }),
+/* 35 */
+/***/ ((module) => {
+
+module.exports = require("jwt-decode");
+
+/***/ }),
+/* 36 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RbacService = void 0;
+const common_1 = __webpack_require__(3);
+const cognito_rbac_service_1 = __webpack_require__(37);
+let RbacService = class RbacService {
+    constructor(cognitoRbacService) {
+        this.cognitoRbacService = cognitoRbacService;
+    }
+    async createRole(roleName, description) {
+        return this.cognitoRbacService.createRole(roleName, description);
+    }
+    async listRoles(limit, nextToken) {
+        return this.cognitoRbacService.listRoles(limit, nextToken);
+    }
+    async assignRoleToUser(username, roleName) {
+        return this.cognitoRbacService.assignRoleToUser(username, roleName);
+    }
+    async removeRoleFromUser(username, roleName) {
+        return this.cognitoRbacService.removeRoleFromUser(username, roleName);
+    }
+    async getUserRoles(username, limit, nextToken) {
+        return this.cognitoRbacService.getUserRoles(username, limit, nextToken);
+    }
+};
+exports.RbacService = RbacService;
+exports.RbacService = RbacService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof cognito_rbac_service_1.CognitoRbacService !== "undefined" && cognito_rbac_service_1.CognitoRbacService) === "function" ? _a : Object])
+], RbacService);
+
+
+/***/ }),
+/* 37 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CognitoRbacService = void 0;
+const common_1 = __webpack_require__(3);
+const config_1 = __webpack_require__(4);
+const client_cognito_identity_provider_1 = __webpack_require__(30);
+let CognitoRbacService = class CognitoRbacService {
+    constructor(configService) {
+        this.configService = configService;
+        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.cognitoClient = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
+            region: this.configService.get('AWS_REGION'),
+            credentials: {
+                accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID') || '',
+                secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY') || '',
+            },
+        });
+    }
+    async createRole(roleName, description) {
+        const command = new client_cognito_identity_provider_1.CreateGroupCommand({
+            GroupName: roleName,
+            Description: description,
+            UserPoolId: this.userPoolId,
+        });
+        return this.cognitoClient.send(command);
+    }
+    async listRoles(limit = 60, nextToken) {
+        const command = new client_cognito_identity_provider_1.ListGroupsCommand({
+            UserPoolId: this.userPoolId,
+            Limit: limit,
+            NextToken: nextToken,
+        });
+        return this.cognitoClient.send(command);
+    }
+    async assignRoleToUser(username, roleName) {
+        const command = new client_cognito_identity_provider_1.AdminAddUserToGroupCommand({
+            UserPoolId: this.userPoolId,
+            Username: username,
+            GroupName: roleName,
+        });
+        return this.cognitoClient.send(command);
+    }
+    async removeRoleFromUser(username, roleName) {
+        const command = new client_cognito_identity_provider_1.AdminRemoveUserFromGroupCommand({
+            UserPoolId: this.userPoolId,
+            Username: username,
+            GroupName: roleName,
+        });
+        return this.cognitoClient.send(command);
+    }
+    async getUserRoles(username, limit = 60, nextToken) {
+        const command = new client_cognito_identity_provider_1.AdminListGroupsForUserCommand({
+            UserPoolId: this.userPoolId,
+            Username: username,
+            Limit: limit,
+            NextToken: nextToken,
+        });
+        return this.cognitoClient.send(command);
+    }
+};
+exports.CognitoRbacService = CognitoRbacService;
+exports.CognitoRbacService = CognitoRbacService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _a : Object])
+], CognitoRbacService);
+
+
+/***/ }),
+/* 38 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RbacModule = void 0;
+const common_1 = __webpack_require__(3);
+const rbac_service_1 = __webpack_require__(36);
+const rbac_controller_1 = __webpack_require__(39);
+const cognito_rbac_service_1 = __webpack_require__(37);
+let RbacModule = class RbacModule {
+};
+exports.RbacModule = RbacModule;
+exports.RbacModule = RbacModule = __decorate([
+    (0, common_1.Module)({
+        providers: [rbac_service_1.RbacService, cognito_rbac_service_1.CognitoRbacService],
+        controllers: [rbac_controller_1.RbacController],
+        exports: [rbac_service_1.RbacService],
+    })
+], RbacModule);
+
+
+/***/ }),
+/* 39 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RbacController = void 0;
+const common_1 = __webpack_require__(3);
+const rbac_service_1 = __webpack_require__(36);
+const jwt_guard_1 = __webpack_require__(40);
+const roles_guard_1 = __webpack_require__(44);
+const roles_decorator_1 = __webpack_require__(45);
+let RbacController = class RbacController {
+    constructor(rbacService) {
+        this.rbacService = rbacService;
+    }
+    async createRole(payload) {
+        const { roleName, description } = payload;
+        return this.rbacService.createRole(roleName, description);
+    }
+    async listRoles(limit, nextToken) {
+        return this.rbacService.listRoles(limit, nextToken);
+    }
+    async assignRoleToUser(username, payload) {
+        const { roleName } = payload;
+        return this.rbacService.assignRoleToUser(username, roleName);
+    }
+    async removeRoleFromUser(username, payload) {
+        const { roleName } = payload;
+        return this.rbacService.removeRoleFromUser(username, roleName);
+    }
+    async getUserRoles(username, limit, nextToken) {
+        return this.rbacService.getUserRoles(username, limit, nextToken);
+    }
+};
+exports.RbacController = RbacController;
+__decorate([
+    (0, common_1.Post)('roles'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RbacController.prototype, "createRole", null);
+__decorate([
+    (0, common_1.Get)('roles'),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('nextToken')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:returntype", Promise)
+], RbacController.prototype, "listRoles", null);
+__decorate([
+    (0, common_1.Post)('users/:username/roles'),
+    __param(0, (0, common_1.Param)('username')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RbacController.prototype, "assignRoleToUser", null);
+__decorate([
+    (0, common_1.Post)('users/:username/roles/remove'),
+    __param(0, (0, common_1.Param)('username')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RbacController.prototype, "removeRoleFromUser", null);
+__decorate([
+    (0, common_1.Get)('users/:username/roles'),
+    __param(0, (0, common_1.Param)('username')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('nextToken')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, String]),
+    __metadata("design:returntype", Promise)
+], RbacController.prototype, "getUserRoles", null);
+exports.RbacController = RbacController = __decorate([
+    (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Controller)('rbac'),
+    __metadata("design:paramtypes", [typeof (_a = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _a : Object])
+], RbacController);
+
+
+/***/ }),
+/* 40 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.JwtGuard = void 0;
+const common_1 = __webpack_require__(3);
+const config_1 = __webpack_require__(4);
+const jsonwebtoken_1 = __webpack_require__(41);
+const jwk_to_pem_1 = __webpack_require__(42);
+const axios_1 = __webpack_require__(43);
+const token_revocation_service_1 = __webpack_require__(32);
+let JwtGuard = class JwtGuard {
+    constructor(configService, tokenRevocationService) {
+        this.configService = configService;
+        this.tokenRevocationService = tokenRevocationService;
+        const userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID');
+        const region = this.configService.get('AWS_REGION');
+        this.cognitoIssuer = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+        this.loadJwks();
+    }
+    extractTokenFromHeader(request) {
+        const [type, token] = request.headers.authorization?.split(' ') ?? [];
+        return type === 'Bearer' ? token : undefined;
+    }
+    async loadJwks() {
+        try {
+            const response = await axios_1.default.get(`${this.cognitoIssuer}/.well-known/jwks.json`);
+            this.jwks = response.data.keys;
+        }
+        catch (error) {
+            console.error('Failed to load JWKS:', error);
+        }
+    }
+    getPublicKey(kid) {
+        if (!this.jwks) {
+            throw new Error('JWKS not loaded');
+        }
+        const key = this.jwks.find((k) => k.kid === kid);
+        if (!key) {
+            throw new Error('Key not found');
+        }
+        return (0, jwk_to_pem_1.default)(key);
+    }
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const token = this.extractTokenFromHeader(request);
+        if (!token) {
+            throw new common_1.UnauthorizedException('No token provided');
+        }
+        const isRevoked = await this.tokenRevocationService.isTokenRevoked(token);
+        if (isRevoked) {
+            throw new common_1.UnauthorizedException('Session expired, Login again');
+        }
+        try {
+            const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString());
+            const publicKey = this.getPublicKey(header.kid);
+            const payload = (0, jsonwebtoken_1.verify)(token, publicKey, {
+                issuer: this.cognitoIssuer,
+                algorithms: ['RS256'],
+            });
+            request['user'] = payload;
+            return true;
+        }
+        catch (error) {
+            throw new common_1.UnauthorizedException('Invalid token');
+        }
+    }
+};
+exports.JwtGuard = JwtGuard;
+exports.JwtGuard = JwtGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _a : Object, typeof (_b = typeof token_revocation_service_1.TokenRevocationService !== "undefined" && token_revocation_service_1.TokenRevocationService) === "function" ? _b : Object])
+], JwtGuard);
+
+
+/***/ }),
+/* 41 */
+/***/ ((module) => {
+
+module.exports = require("jsonwebtoken");
+
+/***/ }),
+/* 42 */
+/***/ ((module) => {
+
+module.exports = require("jwk-to-pem");
+
+/***/ }),
+/* 43 */
+/***/ ((module) => {
+
+module.exports = require("axios");
+
+/***/ }),
+/* 44 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RolesGuard = void 0;
+const common_1 = __webpack_require__(3);
+const core_1 = __webpack_require__(1);
+let RolesGuard = class RolesGuard {
+    constructor(reflector) {
+        this.reflector = reflector;
+    }
+    canActivate(context) {
+        const handlerRoles = this.reflector.get('roles', context.getHandler()) || [];
+        const classRoles = this.reflector.get('roles', context.getClass()) || [];
+        const requiredRoles = [...new Set([...classRoles, ...handlerRoles])];
+        if (requiredRoles.length === 0) {
+            return true;
+        }
+        const request = context.switchToHttp().getRequest();
+        const user = request['user'];
+        if (!user) {
+            return false;
+        }
+        const userRoles = user['cognito:groups'] || [];
+        const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+        if (!hasRequiredRole) {
+            throw new common_1.ForbiddenException('Insufficient permissions');
+        }
+        return true;
+    }
+};
+exports.RolesGuard = RolesGuard;
+exports.RolesGuard = RolesGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof core_1.Reflector !== "undefined" && core_1.Reflector) === "function" ? _a : Object])
+], RolesGuard);
+
+
+/***/ }),
+/* 45 */
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Roles = exports.ROLES_KEY = void 0;
+const common_1 = __webpack_require__(3);
+exports.ROLES_KEY = 'roles';
+const Roles = (...roles) => (0, common_1.SetMetadata)(exports.ROLES_KEY, roles);
+exports.Roles = Roles;
+
+
+/***/ }),
+/* 46 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UtilsModule = void 0;
+const common_1 = __webpack_require__(3);
+const token_revocation_service_1 = __webpack_require__(32);
+let UtilsModule = class UtilsModule {
+};
+exports.UtilsModule = UtilsModule;
+exports.UtilsModule = UtilsModule = __decorate([
+    (0, common_1.Global)(),
+    (0, common_1.Module)({
+        providers: [token_revocation_service_1.TokenRevocationService],
+        exports: [token_revocation_service_1.TokenRevocationService]
+    })
+], UtilsModule);
+
+
+/***/ }),
+/* 47 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var GlobalExceptionFilter_1;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GlobalExceptionFilter = void 0;
+const common_1 = __webpack_require__(3);
+let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilter {
+    constructor() {
+        this.logger = new common_1.Logger(GlobalExceptionFilter_1.name);
+    }
+    catch(exception, host) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
+        const error = exception.getError?.() || exception;
+        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
+            const error = exception.getError?.() || exception;
+            console.log('CODE: ', error.code);
+            console.log('details: ', error.details);
+            if (error.code === 3) {
+                const details = JSON.parse(error.details);
+                return response.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    status: 'error',
+                    ...details,
+                    stack: error.stack
+                });
+            }
+            const status = this.getHttpStatus(error.code);
+            try {
+                const details = JSON.parse(error.details);
+                return response.status(status).json({
+                    status: 'error',
+                    ...details,
+                    stack: error.stack
+                });
+            }
+            catch {
+                return response.status(status).json({
+                    status: 'error',
+                    message: error.details,
+                    module: 'unknown',
+                    timestamp: new Date().toISOString(),
+                    stack: error.stack
+                });
+            }
+        }
+        return response.status(error.status).json({
+            status: 'error',
+            message: error.message,
+            timestamp: new Date().toISOString(),
+            stack: error.stack
+        });
+    }
+    getHttpStatus(code) {
+        switch (code) {
+            case 3:
+                return common_1.HttpStatus.BAD_REQUEST;
+            case 5:
+                return common_1.HttpStatus.NOT_FOUND;
+            case 7:
+                return common_1.HttpStatus.FORBIDDEN;
+            case 16:
+                return common_1.HttpStatus.UNAUTHORIZED;
+            default:
+                return common_1.HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+    }
+};
+exports.GlobalExceptionFilter = GlobalExceptionFilter;
+exports.GlobalExceptionFilter = GlobalExceptionFilter = GlobalExceptionFilter_1 = __decorate([
+    (0, common_1.Catch)()
+], GlobalExceptionFilter);
+
+
+/***/ }),
+/* 48 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ThrottlerExceptionFilter = void 0;
+const common_1 = __webpack_require__(3);
+const throttler_1 = __webpack_require__(23);
+let ThrottlerExceptionFilter = class ThrottlerExceptionFilter {
+    catch(exception, host) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
+        const status = common_1.HttpStatus.TOO_MANY_REQUESTS;
+        response
+            .status(status)
+            .json({
+            status: 'error',
+            message: 'Rate limit exceeded. Please try again later.',
+            timestamp: new Date().toISOString(),
+        });
+    }
+};
+exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter;
+exports.ThrottlerExceptionFilter = ThrottlerExceptionFilter = __decorate([
+    (0, common_1.Catch)(throttler_1.ThrottlerException)
+], ThrottlerExceptionFilter);
+
 
 /***/ })
-
-/******/ 	});
+/******/ 	]);
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -946,16 +2185,13 @@ var __webpack_exports__ = {};
 // This entry needs to be wrapped in an IIFE because it needs to be isolated against other modules in the chunk.
 (() => {
 var exports = __webpack_exports__;
-/*!**************************************!*\
-  !*** ./apps/api-gateway/src/main.ts ***!
-  \**************************************/
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
-const app_module_1 = __webpack_require__(/*! ./app.module */ "./apps/api-gateway/src/app.module.ts");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const global_exception_filter_1 = __webpack_require__(/*! ./filters/global-exception.filter */ "./apps/api-gateway/src/filters/global-exception.filter.ts");
-const throttler_exception_filter_1 = __webpack_require__(/*! ./filters/throttler-exception.filter */ "./apps/api-gateway/src/filters/throttler-exception.filter.ts");
+const core_1 = __webpack_require__(1);
+const app_module_1 = __webpack_require__(2);
+const config_1 = __webpack_require__(4);
+const global_exception_filter_1 = __webpack_require__(47);
+const throttler_exception_filter_1 = __webpack_require__(48);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);

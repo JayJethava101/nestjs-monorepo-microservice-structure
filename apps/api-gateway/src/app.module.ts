@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { UtilsModule } from './modules/utils/utils.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { CognitoModule } from './modules/cognito/cognito.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     RbacModule,
     UserModule,
     TenantModule,
+    CognitoModule
   ],
   controllers: [AppController],
   providers: [

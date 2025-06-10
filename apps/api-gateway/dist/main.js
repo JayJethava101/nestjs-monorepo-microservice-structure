@@ -34,6 +34,7 @@ const auth_module_1 = __webpack_require__(24);
 const rbac_module_1 = __webpack_require__(38);
 const utils_module_1 = __webpack_require__(46);
 const ioredis_1 = __webpack_require__(33);
+const cognito_module_1 = __webpack_require__(47);
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -74,6 +75,7 @@ exports.AppModule = AppModule = __decorate([
             rbac_module_1.RbacModule,
             user_module_1.UserModule,
             tenant_module_1.TenantModule,
+            cognito_module_1.CognitoModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [
@@ -1861,7 +1863,7 @@ exports.JwtGuard = void 0;
 const common_1 = __webpack_require__(3);
 const config_1 = __webpack_require__(4);
 const jsonwebtoken_1 = __webpack_require__(41);
-const jwk_to_pem_1 = __webpack_require__(42);
+const jwkToPem = __webpack_require__(42);
 const axios_1 = __webpack_require__(43);
 const token_revocation_service_1 = __webpack_require__(32);
 let JwtGuard = class JwtGuard {
@@ -1887,14 +1889,11 @@ let JwtGuard = class JwtGuard {
         }
     }
     getPublicKey(kid) {
-        if (!this.jwks) {
-            throw new Error('JWKS not loaded');
-        }
         const key = this.jwks.find((k) => k.kid === kid);
         if (!key) {
-            throw new Error('Key not found');
+            throw new common_1.UnauthorizedException('Invalid token');
         }
-        return (0, jwk_to_pem_1.default)(key);
+        return jwkToPem(key);
     }
     async canActivate(context) {
         const request = context.switchToHttp().getRequest();
@@ -1917,6 +1916,7 @@ let JwtGuard = class JwtGuard {
             return true;
         }
         catch (error) {
+            console.log(error);
             throw new common_1.UnauthorizedException('Invalid token');
         }
     }
@@ -2047,6 +2047,259 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CognitoModule = void 0;
+const common_1 = __webpack_require__(3);
+const cognito_service_1 = __webpack_require__(28);
+const cognito_rbac_service_1 = __webpack_require__(37);
+const cognito_sso_service_1 = __webpack_require__(48);
+const cognito_sso_controller_1 = __webpack_require__(49);
+const token_revocation_service_1 = __webpack_require__(32);
+let CognitoModule = class CognitoModule {
+};
+exports.CognitoModule = CognitoModule;
+exports.CognitoModule = CognitoModule = __decorate([
+    (0, common_1.Module)({
+        providers: [cognito_service_1.CognitoService, cognito_rbac_service_1.CognitoRbacService, cognito_sso_service_1.CognitoSsoService, token_revocation_service_1.TokenRevocationService],
+        exports: [cognito_service_1.CognitoService, cognito_rbac_service_1.CognitoRbacService, cognito_sso_service_1.CognitoSsoService],
+        controllers: [cognito_sso_controller_1.CognitoSsoController],
+    })
+], CognitoModule);
+
+
+/***/ }),
+/* 48 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CognitoSsoService = void 0;
+const common_1 = __webpack_require__(3);
+const config_1 = __webpack_require__(4);
+const client_cognito_identity_provider_1 = __webpack_require__(30);
+const crypto = __webpack_require__(29);
+let CognitoSsoService = class CognitoSsoService {
+    constructor(configService) {
+        this.configService = configService;
+        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.clientId = this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
+        this.clientSecret = this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
+        this.region = this.configService.get('AWS_REGION') || '';
+        this.cognitoDomain = this.configService.get('AWS_COGNITO_DOMAIN') ||
+            `${this.userPoolId}.auth.${this.region}.amazoncognito.com`;
+        this.redirectUri = this.configService.get('SSO_REDIRECT_URI') || 'http://localhost:3000/auth/sso/callback';
+        if (!this.clientSecret) {
+            throw new Error('AWS_COGNITO_CLIENT_SECRET is not configured');
+        }
+        if (!this.cognitoDomain) {
+            throw new Error('AWS_COGNITO_DOMAIN is not configured');
+        }
+        this.cognitoClient = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
+            region: this.region,
+        });
+    }
+    generateSecretHash(username) {
+        return crypto
+            .createHmac('SHA256', this.clientSecret)
+            .update(username + this.clientId)
+            .digest('base64');
+    }
+    async initiateSsoAuth(provider) {
+        if (!['Google', 'Facebook', 'Apple'].includes(provider)) {
+            throw new Error('Invalid provider');
+        }
+        const state = this.generateState();
+        const params = new URLSearchParams({
+            client_id: this.clientId,
+            response_type: 'code',
+            scope: 'email openid phone',
+            redirect_uri: this.redirectUri,
+            provider
+        });
+        if (state) {
+            params.append('state', state);
+        }
+        const authorizationUrl = `${this.cognitoDomain}/login?${params.toString()}`;
+        console.log('🔗 Generated authorization URL:', authorizationUrl);
+        return {
+            authorizationUrl,
+            state,
+        };
+    }
+    async exchangeCodeForTokens(code, state) {
+        if (!code) {
+            throw new Error('Authorization code is required');
+        }
+        const tokenEndpoint = `${this.cognitoDomain}/oauth2/token`;
+        const params = new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: this.clientId,
+            code: code,
+            redirect_uri: this.redirectUri,
+        });
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        if (this.clientSecret) {
+            const authString = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+            headers['Authorization'] = `Basic ${authString}`;
+        }
+        console.log('🔑 Token Exchange Parameters:', {
+            endpoint: tokenEndpoint,
+            params: Object.fromEntries(params),
+            headers: { ...headers, Authorization: '[REDACTED]' }
+        });
+        try {
+            const response = await fetch(tokenEndpoint, {
+                method: 'POST',
+                headers,
+                body: params,
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('❌ Token exchange error:', errorData);
+                throw new common_1.UnauthorizedException(errorData.error_description || 'Failed to exchange code for tokens');
+            }
+            const tokens = await response.json();
+            console.log('✅ Token exchange successful');
+            return {
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                idToken: tokens.id_token,
+                expiresIn: tokens.expires_in,
+                tokenType: tokens.token_type,
+            };
+        }
+        catch (error) {
+            console.error('❌ Error exchanging code for tokens:', error);
+            throw new common_1.UnauthorizedException('Authentication failed');
+        }
+    }
+    generateState() {
+        return Math.random().toString(36).substring(2, 15);
+    }
+};
+exports.CognitoSsoService = CognitoSsoService;
+exports.CognitoSsoService = CognitoSsoService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _a : Object])
+], CognitoSsoService);
+
+
+/***/ }),
+/* 49 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CognitoSsoController = void 0;
+const common_1 = __webpack_require__(3);
+const cognito_sso_service_1 = __webpack_require__(48);
+let CognitoSsoController = class CognitoSsoController {
+    constructor(cognitoSsoService) {
+        this.cognitoSsoService = cognitoSsoService;
+    }
+    async initiateSso(provider) {
+        try {
+            if (!['Google', 'Facebook', 'Apple'].includes(provider)) {
+                throw new common_1.HttpException('Invalid provider', common_1.HttpStatus.BAD_REQUEST);
+            }
+            return await this.cognitoSsoService.initiateSsoAuth(provider);
+        }
+        catch (error) {
+            throw new common_1.HttpException(error.message, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async handleCallback(code, state, error, errorDescription, res) {
+        console.log('📥 OAuth Callback Received');
+        console.log('Code:', code ? `${code.substring(0, 20)}...` : 'MISSING');
+        console.log('State:', state);
+        console.log('Error:', error);
+        if (error) {
+            return {
+                success: false,
+                error: error,
+                error_description: errorDescription,
+                message: 'OAuth authentication failed'
+            };
+        }
+        if (!code)
+            throw new common_1.BadRequestException('Authorization code not received');
+        try {
+            const tokens = await this.cognitoSsoService.exchangeCodeForTokens(code, state);
+            console.log('✅ Token exchange successful');
+            console.log(tokens);
+            return {
+                success: true,
+                message: 'SSO authentication successful!',
+                tokens,
+            };
+        }
+        catch (error) {
+            console.error('❌ Token exchange failed:', error);
+            throw error;
+        }
+    }
+};
+exports.CognitoSsoController = CognitoSsoController;
+__decorate([
+    (0, common_1.Get)('initiate'),
+    __param(0, (0, common_1.Query)('provider')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CognitoSsoController.prototype, "initiateSso", null);
+__decorate([
+    (0, common_1.Get)('callback'),
+    __param(0, (0, common_1.Query)('code')),
+    __param(1, (0, common_1.Query)('state')),
+    __param(2, (0, common_1.Query)('error')),
+    __param(3, (0, common_1.Query)('error_description')),
+    __param(4, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, typeof (_b = typeof Response !== "undefined" && Response) === "function" ? _b : Object]),
+    __metadata("design:returntype", Promise)
+], CognitoSsoController.prototype, "handleCallback", null);
+exports.CognitoSsoController = CognitoSsoController = __decorate([
+    (0, common_1.Controller)('auth/sso'),
+    __metadata("design:paramtypes", [typeof (_a = typeof cognito_sso_service_1.CognitoSsoService !== "undefined" && cognito_sso_service_1.CognitoSsoService) === "function" ? _a : Object])
+], CognitoSsoController);
+
+
+/***/ }),
+/* 50 */
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
 var GlobalExceptionFilter_1;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GlobalExceptionFilter = void 0;
@@ -2119,7 +2372,7 @@ exports.GlobalExceptionFilter = GlobalExceptionFilter = GlobalExceptionFilter_1 
 
 
 /***/ }),
-/* 48 */
+/* 51 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -2190,8 +2443,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __webpack_require__(1);
 const app_module_1 = __webpack_require__(2);
 const config_1 = __webpack_require__(4);
-const global_exception_filter_1 = __webpack_require__(47);
-const throttler_exception_filter_1 = __webpack_require__(48);
+const global_exception_filter_1 = __webpack_require__(50);
+const throttler_exception_filter_1 = __webpack_require__(51);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);

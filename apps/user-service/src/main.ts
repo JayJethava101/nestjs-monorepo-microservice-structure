@@ -7,9 +7,6 @@ import { GrpcExceptionFilter } from '../../../libs/filters/grpc-exception.filter
 import { Logger } from '@nestjs/common';
 import { DtoValidationPipe } from '../../../libs/pipes/validation.pipe';
 import { ConfigService } from '@nestjs/config';
-import { TenantInterceptor } from '../../../libs/tenant.interceptor';
-import { CorrelationInterceptor } from '../../../libs/correlation.interceptor';
-import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
@@ -31,13 +28,6 @@ async function bootstrap() {
 
   // Use custom exception filter
   app.useGlobalFilters(new GrpcExceptionFilter(serviceName));
-
-  const pinoLogger = app.get(PinoLogger);
-  app.useLogger(pinoLogger);
-  app.useGlobalInterceptors(
-    new TenantInterceptor(app.get(PinoLogger)),
-    new CorrelationInterceptor(app.get(PinoLogger)),
-  );
 
   await app.listen();
   logger.log(`User Service is running on port ${port}`);

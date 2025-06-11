@@ -1,17 +1,4 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { PinoLogger } from 'nestjs-pino';
+import { Controller } from '@nestjs/common';
 
-@Controller('test')
-export class TestController {
-  constructor(private readonly logger: PinoLogger) {}
-
-  @Get()
-  getTest(@Req() req: any) {
-    this.logger.info({
-      msg: 'Test endpoint hit',
-      tenantId: req.tenantId,
-      correlationId: req.correlationId,
-    });
-    return { message: 'ok' };
-  }
-} 
+@Controller('api')
+export class AppController {} 

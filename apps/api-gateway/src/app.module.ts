@@ -1,18 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TestController } from './app.controller';
+import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { Tenant } from './modules/tenant/tenant.entity';
 import { join } from 'path';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { LoggerModule } from '../../../libs/logger.module';
 
 @Module({
   imports: [
-    LoggerModule,
     // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
@@ -43,7 +41,7 @@ import { LoggerModule } from '../../../libs/logger.module';
     UserModule,
     TenantModule,
   ],
-  controllers: [TestController, TestController],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

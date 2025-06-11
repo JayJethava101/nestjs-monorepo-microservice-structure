@@ -3,7 +3,6 @@ import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { DatabaseModule } from './modules/database/database.module';
-import { LoggerModule } from '../../../libs/logger.module';
 import { TestController } from './app.controller';
 
 @Module({
@@ -15,7 +14,6 @@ import { TestController } from './app.controller';
       expandVariables: true,
     }),
     UserModule,
-    LoggerModule,
     DatabaseModule,
   ],
   controllers: [TestController],

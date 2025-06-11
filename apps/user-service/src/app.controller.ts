@@ -8,7 +8,7 @@ export class TestController {
   @Get()
   getTest(@Req() req: any) {
     this.logger.info({
-      msg: 'Test endpoint hit',
+      msg: 'User Service test endpoint hit',
       tenantId: req.tenantId,
       correlationId: req.correlationId,
     });

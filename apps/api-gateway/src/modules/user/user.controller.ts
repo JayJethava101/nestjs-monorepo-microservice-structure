@@ -1,72 +1,54 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, OnModuleInit } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
-import { Metadata } from '@grpc/grpc-js';
-import * as createError from 'http-errors';
-import { IUserService } from "@libs/interface/user-service.interface"
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
+import { UserService } from './user.service';
+import { CreateUserDto, UpdateUserDto } from '@libs/dto/user.dto';
 import { TenantService } from '../tenant/tenant.service';
-import { CreateUserDto, UpdateUserDto } from "@libs/dto/user.dto"
-import { ConfigService } from '@nestjs/config';
 
 @Controller('users')
-export class UserController implements OnModuleInit {
-  private userService: IUserService;
-
+export class UserController {
   constructor(
-    @Inject('USER_PACKAGE') private client: ClientGrpc,
-    private tenantService: TenantService,
+    private readonly userService: UserService,
+    private readonly tenantService: TenantService,
   ) {}
 
-  onModuleInit() {
-    this.userService = this.client.getService<IUserService>('UserService');
-  }
-
-  private async prepareMetadata(tenantId: string): Promise<Metadata> {
-    if (!tenantId) {
-      throw createError(400, 'tenantId is required in header')
-    }
-
+  private async prepareHeaders(tenantId: string): Promise<Record<string, string>> {
     const tenant = await this.tenantService.findById(tenantId);
-    if (!tenant) {
-      throw createError(404, 'Tenant not found')
-    }
-
-    const metadata = new Metadata();
-    metadata.add('tenant-id', tenantId);
-    metadata.add('db-name', tenant.dbName);
-    return metadata;
+    return {
+      'x-tenant-id': tenantId,
+      'x-db-name': tenant?.dbName || '',
+    };
   }
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.createUser(createUserDto, metadata);
-  }
-
-  @Get()
-  async findAll(@Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.listUsers({}, metadata);
+    const headers = await this.prepareHeaders(tenantId);
+    return this.userService.createUser(createUserDto, headers);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.getUser({ id }, metadata);
+    const headers = await this.prepareHeaders(tenantId);
+    return this.userService.getUser(id, headers);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.updateUser({
-      id,
-      ...updateUserDto
-    }, metadata);
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
+    const headers = await this.prepareHeaders(tenantId);
+    return this.userService.updateUser(id, updateUserDto, headers);
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.deleteUser({ id }, metadata);
+    const headers = await this.prepareHeaders(tenantId);
+    return this.userService.deleteUser(id, headers);
+  }
+
+  @Get()
+  async findAll(@Headers('x-tenant-id') tenantId: string) {
+    const headers = await this.prepareHeaders(tenantId);
+    return this.userService.listUsers(headers);
   }
 } 

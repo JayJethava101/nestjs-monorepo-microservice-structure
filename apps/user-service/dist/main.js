@@ -18,9 +18,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AppModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/user-service/src/modules/user/user.module.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const path_1 = __webpack_require__(/*! path */ "path");
+const graphql_1 = __webpack_require__(/*! @nestjs/graphql */ "@nestjs/graphql");
+const apollo_1 = __webpack_require__(/*! @nestjs/apollo */ "@nestjs/apollo");
+const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/user-service/src/modules/user/user.module.ts");
 const database_module_1 = __webpack_require__(/*! ./modules/database/database.module */ "./apps/user-service/src/modules/database/database.module.ts");
 let AppModule = class AppModule {
 };
@@ -30,15 +31,34 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
-                envFilePath: (0, path_1.join)(__dirname, './../../../.env'),
-                cache: true,
-                expandVariables: true,
+            }),
+            graphql_1.GraphQLModule.forRoot({
+                driver: apollo_1.ApolloDriver,
+                autoSchemaFile: true,
+                sortSchema: true,
+                playground: true,
+                context: ({ req }) => ({
+                    tenantId: req.headers['x-tenant-id'],
+                    dbName: req.headers['x-db-name'],
+                }),
             }),
             user_module_1.UserModule,
             database_module_1.DatabaseModule,
         ],
     })
 ], AppModule);
+
+
+/***/ }),
+
+/***/ "./apps/user-service/src/modules/database/context.ts":
+/*!***********************************************************!*\
+  !*** ./apps/user-service/src/modules/database/context.ts ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -158,104 +178,6 @@ exports.DatabaseService = DatabaseService = DatabaseService_1 = __decorate([
 
 /***/ }),
 
-/***/ "./apps/user-service/src/modules/user/user.controller.ts":
-/*!***************************************************************!*\
-  !*** ./apps/user-service/src/modules/user/user.controller.ts ***!
-  \***************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UserController = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/modules/user/user.service.ts");
-const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
-let UserController = class UserController {
-    constructor(userService) {
-        this.userService = userService;
-    }
-    getTenantInfo(metadata) {
-        const tenantId = metadata.internalRepr.get('tenant-id')?.[0];
-        const dbName = metadata.internalRepr.get('db-name')?.[0];
-        if (!tenantId || !dbName) {
-            throw new microservices_1.RpcException('Tenant ID and database name are required');
-        }
-        return { tenantId, dbName };
-    }
-    async create(createUserDto, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        return this.userService.create(createUserDto, { tenantId, dbName });
-    }
-    async findOne(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        return this.userService.findOne(data.id, { tenantId, dbName });
-    }
-    async update(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        const { id, ...updateUserDto } = data;
-        return this.userService.update(id, updateUserDto, { tenantId, dbName });
-    }
-    async remove(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        await this.userService.remove(data.id, { tenantId, dbName });
-        return { success: true };
-    }
-    async findAll(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        const users = await this.userService.findAll({ tenantId, dbName });
-        return { users };
-    }
-};
-exports.UserController = UserController;
-__decorate([
-    (0, microservices_1.GrpcMethod)('UserService', 'CreateUser'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object, typeof (_c = typeof Record !== "undefined" && Record) === "function" ? _c : Object]),
-    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
-], UserController.prototype, "create", null);
-__decorate([
-    (0, microservices_1.GrpcMethod)('UserService', 'GetUser'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, typeof (_e = typeof Record !== "undefined" && Record) === "function" ? _e : Object]),
-    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
-], UserController.prototype, "findOne", null);
-__decorate([
-    (0, microservices_1.GrpcMethod)('UserService', 'UpdateUser'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, typeof (_g = typeof Record !== "undefined" && Record) === "function" ? _g : Object]),
-    __metadata("design:returntype", typeof (_h = typeof Promise !== "undefined" && Promise) === "function" ? _h : Object)
-], UserController.prototype, "update", null);
-__decorate([
-    (0, microservices_1.GrpcMethod)('UserService', 'DeleteUser'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, typeof (_j = typeof Record !== "undefined" && Record) === "function" ? _j : Object]),
-    __metadata("design:returntype", typeof (_k = typeof Promise !== "undefined" && Promise) === "function" ? _k : Object)
-], UserController.prototype, "remove", null);
-__decorate([
-    (0, microservices_1.GrpcMethod)('UserService', 'ListUsers'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, typeof (_l = typeof Record !== "undefined" && Record) === "function" ? _l : Object]),
-    __metadata("design:returntype", typeof (_m = typeof Promise !== "undefined" && Promise) === "function" ? _m : Object)
-], UserController.prototype, "findAll", null);
-exports.UserController = UserController = __decorate([
-    (0, common_1.Controller)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof user_service_1.UserService !== "undefined" && user_service_1.UserService) === "function" ? _a : Object])
-], UserController);
-
-
-/***/ }),
-
 /***/ "./apps/user-service/src/modules/user/user.module.ts":
 /*!***********************************************************!*\
   !*** ./apps/user-service/src/modules/user/user.module.ts ***!
@@ -272,39 +194,130 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const graphql_1 = __webpack_require__(/*! @nestjs/graphql */ "@nestjs/graphql");
+const apollo_1 = __webpack_require__(/*! @nestjs/apollo */ "@nestjs/apollo");
 const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/modules/user/user.service.ts");
-const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/user-service/src/modules/user/user.controller.ts");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const path_1 = __webpack_require__(/*! path */ "path");
+const user_resolver_1 = __webpack_require__(/*! ./user.resolver */ "./apps/user-service/src/modules/user/user.resolver.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            config_1.ConfigModule,
-            microservices_1.ClientsModule.registerAsync([
-                {
-                    name: 'USER_PACKAGE',
-                    imports: [config_1.ConfigModule],
-                    useFactory: (configService) => ({
-                        transport: microservices_1.Transport.GRPC,
-                        options: {
-                            package: configService.get('USER_SERVICE_PKG', 'user'),
-                            protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
-                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
-                        },
-                    }),
-                    inject: [config_1.ConfigService],
-                },
-            ]),
-        ],
-        controllers: [user_controller_1.UserController],
-        providers: [user_service_1.UserService],
+        imports: [config_1.ConfigModule, graphql_1.GraphQLModule.forRoot({
+                driver: apollo_1.ApolloDriver,
+                autoSchemaFile: true,
+                playground: true,
+            }),],
+        providers: [user_service_1.UserService, user_resolver_1.UserResolver],
         exports: [user_service_1.UserService],
     })
 ], UserModule);
+
+
+/***/ }),
+
+/***/ "./apps/user-service/src/modules/user/user.resolver.ts":
+/*!*************************************************************!*\
+  !*** ./apps/user-service/src/modules/user/user.resolver.ts ***!
+  \*************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserResolver = void 0;
+const type_graphql_1 = __webpack_require__(/*! type-graphql */ "type-graphql");
+const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/modules/user/user.service.ts");
+const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
+const user_types_1 = __webpack_require__(/*! ./user.types */ "./apps/user-service/src/modules/user/user.types.ts");
+const context_1 = __webpack_require__(/*! ../database/context */ "./apps/user-service/src/modules/database/context.ts");
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+let UserResolver = class UserResolver {
+    constructor(userService) {
+        this.userService = userService;
+    }
+    async createUser(createUserDto, context) {
+        return this.userService.create(createUserDto, context);
+    }
+    async getUser(id, context) {
+        const user = await this.userService.findOne(id, context);
+        if (!user)
+            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+        return user;
+    }
+    async updateUser(id, updateUserDto, context) {
+        const user = await this.userService.update(id, updateUserDto, context);
+        if (!user)
+            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+        return user;
+    }
+    async deleteUser(id, context) {
+        await this.userService.remove(id, context);
+        return { success: true };
+    }
+    async listUsers(context) {
+        const users = await this.userService.findAll(context);
+        return { users };
+    }
+};
+exports.UserResolver = UserResolver;
+__decorate([
+    (0, type_graphql_1.Mutation)(() => user_types_1.UserType),
+    __param(0, (0, type_graphql_1.Arg)('input')),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object, typeof (_c = typeof context_1.Context !== "undefined" && context_1.Context) === "function" ? _c : Object]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], UserResolver.prototype, "createUser", null);
+__decorate([
+    (0, type_graphql_1.Query)(() => user_types_1.UserType),
+    __param(0, (0, type_graphql_1.Arg)('id')),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_e = typeof context_1.Context !== "undefined" && context_1.Context) === "function" ? _e : Object]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], UserResolver.prototype, "getUser", null);
+__decorate([
+    (0, type_graphql_1.Mutation)(() => user_types_1.UserType),
+    __param(0, (0, type_graphql_1.Arg)('id')),
+    __param(1, (0, type_graphql_1.Arg)('input')),
+    __param(2, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_g = typeof user_dto_1.UpdateUserDto !== "undefined" && user_dto_1.UpdateUserDto) === "function" ? _g : Object, typeof (_h = typeof context_1.Context !== "undefined" && context_1.Context) === "function" ? _h : Object]),
+    __metadata("design:returntype", typeof (_j = typeof Promise !== "undefined" && Promise) === "function" ? _j : Object)
+], UserResolver.prototype, "updateUser", null);
+__decorate([
+    (0, type_graphql_1.Mutation)(() => user_types_1.DeleteUserResponse),
+    __param(0, (0, type_graphql_1.Arg)('id')),
+    __param(1, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_k = typeof context_1.Context !== "undefined" && context_1.Context) === "function" ? _k : Object]),
+    __metadata("design:returntype", typeof (_l = typeof Promise !== "undefined" && Promise) === "function" ? _l : Object)
+], UserResolver.prototype, "deleteUser", null);
+__decorate([
+    (0, type_graphql_1.Query)(() => user_types_1.UsersResponse),
+    __param(0, (0, type_graphql_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_m = typeof context_1.Context !== "undefined" && context_1.Context) === "function" ? _m : Object]),
+    __metadata("design:returntype", typeof (_o = typeof Promise !== "undefined" && Promise) === "function" ? _o : Object)
+], UserResolver.prototype, "listUsers", null);
+exports.UserResolver = UserResolver = __decorate([
+    (0, type_graphql_1.Resolver)(() => user_types_1.UserType),
+    __metadata("design:paramtypes", [typeof (_a = typeof user_service_1.UserService !== "undefined" && user_service_1.UserService) === "function" ? _a : Object])
+], UserResolver);
 
 
 /***/ }),
@@ -438,6 +451,76 @@ exports.UserService = UserService = UserService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [typeof (_a = typeof database_service_1.DatabaseService !== "undefined" && database_service_1.DatabaseService) === "function" ? _a : Object])
 ], UserService);
+
+
+/***/ }),
+
+/***/ "./apps/user-service/src/modules/user/user.types.ts":
+/*!**********************************************************!*\
+  !*** ./apps/user-service/src/modules/user/user.types.ts ***!
+  \**********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DeleteUserResponse = exports.UsersResponse = exports.UserType = void 0;
+const type_graphql_1 = __webpack_require__(/*! type-graphql */ "type-graphql");
+let UserType = class UserType {
+};
+exports.UserType = UserType;
+__decorate([
+    (0, type_graphql_1.Field)(() => type_graphql_1.ID),
+    __metadata("design:type", String)
+], UserType.prototype, "id", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", String)
+], UserType.prototype, "email", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", String)
+], UserType.prototype, "name", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], UserType.prototype, "createdAt", void 0);
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], UserType.prototype, "updatedAt", void 0);
+exports.UserType = UserType = __decorate([
+    (0, type_graphql_1.ObjectType)()
+], UserType);
+let UsersResponse = class UsersResponse {
+};
+exports.UsersResponse = UsersResponse;
+__decorate([
+    (0, type_graphql_1.Field)(() => [UserType]),
+    __metadata("design:type", Array)
+], UsersResponse.prototype, "users", void 0);
+exports.UsersResponse = UsersResponse = __decorate([
+    (0, type_graphql_1.ObjectType)()
+], UsersResponse);
+let DeleteUserResponse = class DeleteUserResponse {
+};
+exports.DeleteUserResponse = DeleteUserResponse;
+__decorate([
+    (0, type_graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], DeleteUserResponse.prototype, "success", void 0);
+exports.DeleteUserResponse = DeleteUserResponse = __decorate([
+    (0, type_graphql_1.ObjectType)()
+], DeleteUserResponse);
 
 
 /***/ }),
@@ -610,73 +693,6 @@ exports.ResourceInternalException = ResourceInternalException;
 
 /***/ }),
 
-/***/ "./libs/filters/grpc-exception.filter.ts":
-/*!***********************************************!*\
-  !*** ./libs/filters/grpc-exception.filter.ts ***!
-  \***********************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var GrpcExceptionFilter_1;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GrpcExceptionFilter = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const rxjs_1 = __webpack_require__(/*! rxjs */ "rxjs");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-let GrpcExceptionFilter = GrpcExceptionFilter_1 = class GrpcExceptionFilter {
-    constructor(serviceName) {
-        this.logger = new common_2.Logger(GrpcExceptionFilter_1.name);
-        this.serviceName = serviceName || 'unknown-service';
-    }
-    catch(exception, host) {
-        const error = exception.getError();
-        const module = error.module || 'unknown';
-        this.logger.error(`[${module}] Exception: ${error.message}`, exception.stack);
-        if (error.code === 3) {
-            const validationErrors = JSON.parse(error.message);
-            return (0, rxjs_1.throwError)(() => ({
-                status: 'error',
-                code: error.code,
-                details: JSON.stringify({
-                    message: 'Validation failed',
-                    errors: validationErrors,
-                    module: module,
-                    service: this.serviceName,
-                    timestamp: new Date().toISOString(),
-                }),
-            }));
-        }
-        return (0, rxjs_1.throwError)(() => ({
-            status: 'error',
-            code: error.code || 13,
-            details: JSON.stringify({
-                message: error.message,
-                module: module,
-                service: this.serviceName,
-                timestamp: new Date().toISOString(),
-            })
-        }));
-    }
-};
-exports.GrpcExceptionFilter = GrpcExceptionFilter;
-exports.GrpcExceptionFilter = GrpcExceptionFilter = GrpcExceptionFilter_1 = __decorate([
-    (0, common_1.Catch)(microservices_1.RpcException),
-    __metadata("design:paramtypes", [String])
-], GrpcExceptionFilter);
-
-
-/***/ }),
-
 /***/ "./libs/pipes/validation.pipe.ts":
 /*!***************************************!*\
   !*** ./libs/pipes/validation.pipe.ts ***!
@@ -725,6 +741,16 @@ exports.DtoValidationPipe = DtoValidationPipe = __decorate([
 
 /***/ }),
 
+/***/ "@nestjs/apollo":
+/*!*********************************!*\
+  !*** external "@nestjs/apollo" ***!
+  \*********************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/apollo");
+
+/***/ }),
+
 /***/ "@nestjs/common":
 /*!*********************************!*\
   !*** external "@nestjs/common" ***!
@@ -752,6 +778,16 @@ module.exports = require("@nestjs/config");
 /***/ ((module) => {
 
 module.exports = require("@nestjs/core");
+
+/***/ }),
+
+/***/ "@nestjs/graphql":
+/*!**********************************!*\
+  !*** external "@nestjs/graphql" ***!
+  \**********************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/graphql");
 
 /***/ }),
 
@@ -785,13 +821,13 @@ module.exports = require("class-validator");
 
 /***/ }),
 
-/***/ "rxjs":
-/*!***********************!*\
-  !*** external "rxjs" ***!
-  \***********************/
+/***/ "type-graphql":
+/*!*******************************!*\
+  !*** external "type-graphql" ***!
+  \*******************************/
 /***/ ((module) => {
 
-module.exports = require("rxjs");
+module.exports = require("type-graphql");
 
 /***/ }),
 
@@ -802,16 +838,6 @@ module.exports = require("rxjs");
 /***/ ((module) => {
 
 module.exports = require("typeorm");
-
-/***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/***/ ((module) => {
-
-module.exports = require("path");
 
 /***/ })
 
@@ -852,29 +878,18 @@ var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const path_1 = __webpack_require__(/*! path */ "path");
 const app_module_1 = __webpack_require__(/*! ./app.module */ "./apps/user-service/src/app.module.ts");
-const grpc_exception_filter_1 = __webpack_require__(/*! ../../../libs/filters/grpc-exception.filter */ "./libs/filters/grpc-exception.filter.ts");
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const validation_pipe_1 = __webpack_require__(/*! ../../../libs/pipes/validation.pipe */ "./libs/pipes/validation.pipe.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const validation_pipe_1 = __webpack_require__(/*! ../../../libs/pipes/validation.pipe */ "./libs/pipes/validation.pipe.ts");
 async function bootstrap() {
-    const app = await core_1.NestFactory.createMicroservice(app_module_1.AppModule, {
-        transport: microservices_1.Transport.GRPC,
-        options: {
-            package: process.env.USER_SERVICE_PKG || 'user',
-            protoPath: (0, path_1.join)(__dirname, '../../../libs/proto/user.proto'),
-            url: process.env.USER_SERVICE_URL || 'localhost:5000',
-        },
-    });
+    const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const logger = new common_1.Logger('Bootstrap');
     const configService = app.get(config_1.ConfigService);
-    const port = configService.get('USER_SERVICE_URL', 'localhost:5000').split(':')[1] || '5000';
-    const serviceName = configService.get('USER_SERVICE_PKG', 'user');
+    const port = configService.get('USER_SERVICE_PORT', '5000');
+    app.enableCors();
     app.useGlobalPipes(new validation_pipe_1.DtoValidationPipe());
-    app.useGlobalFilters(new grpc_exception_filter_1.GrpcExceptionFilter(serviceName));
-    await app.listen();
+    await app.listen(port);
     logger.log(`User Service is running on port ${port}`);
 }
 bootstrap();

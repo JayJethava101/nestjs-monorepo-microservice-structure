@@ -3,7 +3,7 @@ import { Inject } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Metadata } from '@grpc/grpc-js';
 import * as createError from 'http-errors';
-import { IUserService } from "@libs/interface/user-service.interface"
+import { IUserService } from "@libs/interfaces/user-service.interface"
 import { TenantService } from '../tenant/tenant.service';
 import { CreateUserDto, UpdateUserDto } from "@libs/dto/user.dto"
 import { ConfigService } from '@nestjs/config';
@@ -37,6 +37,18 @@ export class UserController implements OnModuleInit {
     metadata.add('tenant-id', tenantId);
     metadata.add('db-name', tenant.dbName);
     return metadata;
+  }
+
+  @ApiOperation({ summary: 'Get users with name counts' })
+  @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
+  @ApiResponse({ status: 200, description: 'Return users with name counts.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiResponse({ status: 404, description: 'Tenant not found.' })
+  @Get('name-counts')
+  async findNameCounts(@Headers('x-tenant-id') tenantId: string) {
+    const metadata = await this.prepareMetadata(tenantId);
+    return this.userService.listUsersWithNameCount({}, metadata);
+   
   }
 
   @ApiOperation({ summary: 'Create a new user' })
@@ -96,4 +108,6 @@ export class UserController implements OnModuleInit {
     const metadata = await this.prepareMetadata(tenantId);
     return this.userService.deleteUser({ id }, metadata);
   }
+
+ 
 } 

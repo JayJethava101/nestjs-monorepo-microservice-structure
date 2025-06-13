@@ -18,9 +18,9 @@ export class GrpcExceptionFilter implements RpcExceptionFilter<RpcException> {
     const module = error.module || 'unknown';
 
     
-    this.logger.error(
+    this.logger.debug(
       `[${module}] Exception: ${error.message}`,
-      exception.stack,
+      // exception.stack,
     );
 
     // Handle validation errors
@@ -31,9 +31,9 @@ export class GrpcExceptionFilter implements RpcExceptionFilter<RpcException> {
           code: error.code,
           details: JSON.stringify({
             message: 'Validation failed',
-            errors: validationErrors,
             module: module,
             service: this.serviceName,
+            errors: validationErrors,
             timestamp: new Date().toISOString(),
           }),
         }));

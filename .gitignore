@@ -1,5 +1,9 @@
 # compiled output
+**/dist/
 /dist
+/apps/*/dist/
+/libs/*/dist/
+/packages/*/dist/
 /node_modules
 /build
 

@@ -90,7 +90,7 @@ exports.AppModule = AppModule = __decorate([
                 inject: [config_1.ConfigService],
                 useFactory: (configService) => ({
                     type: 'single',
-                    url: configService.get('REDIS_URL', 'redis://localhost:6379'),
+                    url: `redis://${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}`,
                 }),
             }),
             utils_module_1.UtilsModule,

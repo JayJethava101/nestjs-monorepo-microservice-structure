@@ -39,7 +39,6 @@ import { CognitoModule } from './modules/cognito/cognito.module';
       username: process.env.PG_USER || 'postgres',
       password: process.env.PG_PASSWORD || '1234',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
-      // entities: [__dirname + '/**/*.entity.{js,ts}'],
       entities: [Tenant],
       synchronize: true, // todo: Set to false in production
     }),
@@ -50,7 +49,7 @@ import { CognitoModule } from './modules/cognito/cognito.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'single',
-        url: configService.get('REDIS_URL', 'redis://localhost:6379'),
+        url: `redis://${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}`,
       }),
     }),
 

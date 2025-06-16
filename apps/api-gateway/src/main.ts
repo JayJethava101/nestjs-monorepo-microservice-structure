@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { ThrottlerExceptionFilter } from './filters/throttler-exception.filter';
 import { Logger } from 'nestjs-pino';
+import { LoggingInterceptor } from '../../../libs/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -21,7 +22,7 @@ async function bootstrap() {
     new ThrottlerExceptionFilter()
   );
 
-  app.useGlobalInterceptors();
+  app.useGlobalInterceptors(new LoggingInterceptor(app.get(Logger)));
  
   await app.listen(port);
   console.log(`API Gateway is running on: http://localhost:${port}`);

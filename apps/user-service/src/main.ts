@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { TenantInterceptor } from '../../../libs/tenant.interceptor';
 import { CorrelationInterceptor } from '../../../libs/correlation.interceptor';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import { LoggingInterceptor } from '../../../libs/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
@@ -37,6 +38,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(
     new TenantInterceptor(app.get(PinoLogger)),
     new CorrelationInterceptor(app.get(PinoLogger)),
+    new LoggingInterceptor(app.get(PinoLogger)),
   );
 
   await app.listen();

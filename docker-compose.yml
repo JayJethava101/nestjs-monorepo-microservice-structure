@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - postgres
+      - mongo
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: sspm_central_db
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+volumes:
+  pgdata:
+  mongodata: 

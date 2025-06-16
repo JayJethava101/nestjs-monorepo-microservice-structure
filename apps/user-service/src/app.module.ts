@@ -3,6 +3,7 @@ import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { DatabaseModule } from './modules/database/database.module';
+import { TestController } from './app.controller';
 
 @Module({
   imports: [
@@ -13,8 +14,8 @@ import { DatabaseModule } from './modules/database/database.module';
       expandVariables: true,
     }),
     UserModule,
-
     DatabaseModule,
   ],
+  controllers: [TestController],
 })
 export class AppModule {} 

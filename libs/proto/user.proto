@@ -2,21 +2,21 @@ syntax = "proto3";
 
 package user;
 
-service UserService {
-  rpc CreateUser (CreateUserRequest) returns (UserResponse);
-  rpc GetUser (GetUserRequest) returns (UserResponse);
-  rpc UpdateUser (UpdateUserRequest) returns (UserResponse);
-  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
-  rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
+import "base.proto";
+
+// User response with flattened structure
+message UserResponse {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string createdAt = 4;
+  string updatedAt = 5;
 }
 
+// Extend base request with user-specific fields
 message CreateUserRequest {
   string email = 1;
   string name = 2;
-}
-
-message GetUserRequest {
-  string id = 1;
 }
 
 message UpdateUserRequest {
@@ -25,24 +25,31 @@ message UpdateUserRequest {
   string name = 3;
 }
 
-message DeleteUserRequest {
-  string id = 1;
-}
-
-message DeleteUserResponse {
-  bool success = 1;
-}
-
-message ListUsersRequest {}
-
 message ListUsersResponse {
-  repeated UserResponse users = 1;
+  repeated UserResponse items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+  int32 results = 5;
 }
 
-message UserResponse {
-  string id = 1;
-  string email = 2;
-  string name = 3;
-  string createdAt = 4;
-  string updatedAt = 5;
+message UserNameCount {
+  string name = 1;
+  int32 characters = 2;
+  int32 symbols = 3;
+}
+
+message ListUsersWithNameCountResponse {
+  repeated UserNameCount items = 1;
+  int32 total = 2;
+}
+
+// User service that implements base service methods
+service UserService {
+  rpc CreateUser (CreateUserRequest) returns (UserResponse);
+  rpc GetUser (base.BaseRequest) returns (UserResponse);
+  rpc UpdateUser (UpdateUserRequest) returns (UserResponse);
+  rpc DeleteUser (base.BaseRequest) returns (base.BaseDeleteResponse);
+  rpc ListUsers (base.BaseListRequest) returns (ListUsersResponse);
+  rpc ListUsersWithNameCount (base.BaseListRequest) returns (ListUsersWithNameCountResponse);
 } 

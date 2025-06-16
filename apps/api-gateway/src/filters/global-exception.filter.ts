@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, Logger } from '@nestjs/common';
 import { Response } from 'express';
+import { ApiErrorResponse } from '@libs/interfaces/response.interface';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -8,60 +9,57 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-  
-    // Check if it's an RPC exception by looking at the error structure
+    const request = ctx.getRequest();
     const error = exception.getError?.() || exception;
+
+
+    const errorResponse: ApiErrorResponse = {
+      status: 'error',
+      message: 'Internal server error',
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    };
+
+    // Check if it's an RPC exception
     if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-      const error = exception.getError?.() || exception;
-      console.log('CODE: ', error.code)
-      console.log('details: ', error.details)
+
       // Handle validation errors
-      if (error.code === 3) { // Validation error code
-        const details = JSON.parse(error.details)
+      if (error.code === 3) {
+        const details = JSON.parse(error.details);
         return response.status(HttpStatus.BAD_REQUEST).json({
-          status: 'error',
+          ...errorResponse,
+          // message: 'Validation failed',
+          // errors: details,
           ...details,
-        // ...(process.env.NODE_ENV === 'development' && { stack: exception.stack })
-        stack: error.stack 
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
-  
+
       // Handle other RPC errors
       const status = this.getHttpStatus(error.code);
-      try{
-        const details = JSON.parse(error.details)
+      try {
+        const details = JSON.parse(error.details);
         return response.status(status).json({
-          status: 'error',
-          // // message: error.message,
-          // message: error.details,
-          // module: error.module,
-          // timestamp: new Date().toISOString(),
+          ...errorResponse,
           ...details,
-          // ...(process.env.NODE_ENV === 'development' && { stack: exception.stack })
-          stack: error.stack 
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
-      }catch{
+      } catch {
         return response.status(status).json({
-          status: 'error',
-          // // message: error.message,
+          ...errorResponse,
           message: error.details,
-          module: 'unknown',
-          timestamp: new Date().toISOString(),
-          // ...(process.env.NODE_ENV === 'development' && { stack: exception.stack })
-          stack: error.stack 
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
     }
 
-    // HttpExceptions
-    return response.status(error.status).json({
-      status: 'error',
+    // Handle HTTP exceptions
+
+    return response.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
+      ...errorResponse,
       message: error.message,
-      timestamp: new Date().toISOString(),
-      // ...(process.env.NODE_ENV === 'development' && { stack: exception.stack })
-      stack: error.stack 
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
-   
   }
 
   private getHttpStatus(code: number): number {
@@ -78,4 +76,4 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
   }
-} 
+}

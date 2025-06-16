@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { ConfigService } from '@nestjs/config';
 import { verify } from 'jsonwebtoken';
 import { Request } from 'express';
-import jwkToPem from 'jwk-to-pem';
+import * as jwkToPem from 'jwk-to-pem';
 import axios from 'axios';
 import { TokenRevocationService } from '../../modules/utils/token.revocation.service';
 
@@ -45,16 +45,11 @@ export class JwtGuard implements CanActivate {
     }
   }
 
-  private getPublicKey(kid: string) {
-    if (!this.jwks) {
-      throw new Error('JWKS not loaded');
-    }
-    
-    const key = this.jwks.find((k: { kid: string }) => k.kid === kid);
+  private getPublicKey(kid: string): string {
+    const key = this.jwks.find((k: any) => k.kid === kid);
     if (!key) {
-      throw new Error('Key not found');
+      throw new UnauthorizedException('Invalid token');
     }
-    
     return jwkToPem(key);
   }
 
@@ -86,6 +81,7 @@ export class JwtGuard implements CanActivate {
       request['user'] = payload;
       return true;
     } catch (error) {
+      console.log(error)
       throw new UnauthorizedException('Invalid token');
     }
   }

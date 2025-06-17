@@ -15,30 +15,20 @@ export class AuthService {
     return this.cognitoService.signUp(email, password, name);
   }
 
-  async confirmSignUp(email: string, confirmationCode: string) {
-    // // After confirmation succeeds, assign the default role
-    // await this.assignDefaultRole(email);
-    return this.cognitoService.confirmSignUp(email, confirmationCode);
-  }
-
   async signIn(email: string, password: string) {
     return this.cognitoService.signIn(email, password);
-  }
-
-  async initiateMfaSetup(session: string) {
-   return this.cognitoService.initiateMfaSetup(session);
   }
 
   async verifyMFASetup(session: string, totpCode: string) {
     return this.cognitoService.verifyMFASetup(session, totpCode);
   }
 
-  async respondToMFASetupChallenge(session: string, totpCode: string, email: string) {
-    return this.cognitoService.respondToMFASetupChallenge(session, totpCode, email);
+  async completeMfaSetup(session: string, totpCode: string, email: string) {
+    return this.cognitoService.completeMfaSetup(session, totpCode, email);
   }
 
-  async respondToMFAChallenge(session: string, totpCode: string, email: string) {
-    return this.cognitoService.respondToMFAChallenge(session, totpCode, email);
+  async verifyMFA(session: string, totpCode: string, email: string) {
+    return this.cognitoService.verifyMFA(session, totpCode, email);
   }
 
   async forgotPassword(email: string) {

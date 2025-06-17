@@ -17,6 +17,7 @@ import {
   RespondToAuthChallengeCommand,
   AuthFlowType,
   ChallengeNameType,
+  AdminConfirmSignUpCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import {
   UserNotFoundException,
@@ -94,29 +95,37 @@ export class CognitoService {
     };
 
     try {
+      // First sign up the user
       const command = new SignUpCommand(params);
       const result = await this.cognitoClient.send(command);
+
+      // Automatically confirm the user using admin API
+      const confirmCommand = new AdminConfirmSignUpCommand({
+        UserPoolId: this.userPoolId,
+        Username: email,
+      });
+      await this.cognitoClient.send(confirmCommand);
+
+      
+      // Sign in the user after auto-confirmation
+      const signInResult = await this.signIn(email, password);
+      
+      // If MFA setup is required, initiate it
+      if (signInResult.challengeName === ChallengeNameType.MFA_SETUP && signInResult.session) {
+        const mfaSetupResult = await this.initiateMfaSetup(signInResult.session);
+        return {
+          userSub: result.UserSub,
+          ...signInResult,
+          ...mfaSetupResult,
+          message: 'User registered and confirmed successfully. Please set up MFA.',
+        };
+      }
+
       return {
         userSub: result.UserSub,
-        message: 'User registration successful. Please check your email for verification code.',
+        ...signInResult,
+        message: 'User registered and confirmed successfully.',
       };
-    } catch (error) {
-      this.handleCognitoError(error);
-    }
-  }
-
-  async confirmSignUp(email: string, confirmationCode: string) {
-    const params = {
-      ClientId: this.clientId,
-      Username: email,
-      ConfirmationCode: confirmationCode,
-      SecretHash: this.generateSecretHash(email),
-    };
-
-    try {
-      const command = new ConfirmSignUpCommand(params);
-      await this.cognitoClient.send(command);
-      return { message: 'Email verification successful' };
     } catch (error) {
       this.handleCognitoError(error);
     }
@@ -212,7 +221,7 @@ export class CognitoService {
     }
   }
 
-  async respondToMFASetupChallenge(session: string, totpCode: string, email: string) {
+  async completeMfaSetup(session: string, totpCode: string, email: string) {
     const params = {
       ClientId: this.clientId,
       ChallengeName: ChallengeNameType.MFA_SETUP,
@@ -257,7 +266,7 @@ export class CognitoService {
     }
   }
 
-  async respondToMFAChallenge(session: string, totpCode: string, email: string) {
+  async verifyMFA(session: string, totpCode: string, email: string) {
     const params = {
       ClientId: this.clientId,
       ChallengeName: ChallengeNameType.SOFTWARE_TOKEN_MFA,
@@ -282,6 +291,8 @@ export class CognitoService {
       this.handleCognitoError(error);
     }
   }
+
+  
 
    /**
    * Initiate forgot password flow

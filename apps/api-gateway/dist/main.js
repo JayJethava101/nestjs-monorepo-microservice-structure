@@ -418,7 +418,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+var _a, _b, _c, _d, _e, _f, _g, _h;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -431,23 +431,17 @@ let AuthController = class AuthController {
     async signUp(signUpDto) {
         return this.authService.signUp(signUpDto.email, signUpDto.password, signUpDto.name);
     }
-    async confirmSignUp(confirmSignUpDto) {
-        return this.authService.confirmSignUp(confirmSignUpDto.email, confirmSignUpDto.confirmationCode);
-    }
     async signIn(signInDto) {
         return this.authService.signIn(signInDto.email, signInDto.password);
-    }
-    async setupMFA(setupMFADto) {
-        return this.authService.initiateMfaSetup(setupMFADto.session);
     }
     async verifyMFASetup(verifyMFASetupDto) {
         return this.authService.verifyMFASetup(verifyMFASetupDto.session, verifyMFASetupDto.totpCode);
     }
     async completeMFASetup(verifyMFADto) {
-        return this.authService.respondToMFASetupChallenge(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
+        return this.authService.completeMfaSetup(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
     }
     async verifyMFA(verifyMFADto) {
-        return this.authService.respondToMFAChallenge(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
+        return this.authService.verifyMFA(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
     }
     async globalSignOut(globalSignOutDto) {
         return this.authService.globalSignOut(globalSignOutDto);
@@ -465,35 +459,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signUp", null);
 __decorate([
-    (0, common_1.Post)('confirm-signup'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_c = typeof auth_dto_1.ConfirmSignUpDto !== "undefined" && auth_dto_1.ConfirmSignUpDto) === "function" ? _c : Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "confirmSignUp", null);
-__decorate([
     (0, common_1.Post)('signin'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_d = typeof auth_dto_1.SignInDto !== "undefined" && auth_dto_1.SignInDto) === "function" ? _d : Object]),
+    __metadata("design:paramtypes", [typeof (_c = typeof auth_dto_1.SignInDto !== "undefined" && auth_dto_1.SignInDto) === "function" ? _c : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signIn", null);
-__decorate([
-    (0, common_1.Post)('initiate-mfa-setup'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_e = typeof auth_dto_1.SetupMFADto !== "undefined" && auth_dto_1.SetupMFADto) === "function" ? _e : Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "setupMFA", null);
 __decorate([
     (0, common_1.Post)('verify-mfa-setup'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_f = typeof auth_dto_1.VerifyMFASetupDto !== "undefined" && auth_dto_1.VerifyMFASetupDto) === "function" ? _f : Object]),
+    __metadata("design:paramtypes", [typeof (_d = typeof auth_dto_1.VerifyMFASetupDto !== "undefined" && auth_dto_1.VerifyMFASetupDto) === "function" ? _d : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyMFASetup", null);
 __decorate([
@@ -501,7 +479,7 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_g = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _g : Object]),
+    __metadata("design:paramtypes", [typeof (_e = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _e : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "completeMFASetup", null);
 __decorate([
@@ -509,7 +487,7 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_h = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _h : Object]),
+    __metadata("design:paramtypes", [typeof (_f = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _f : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyMFA", null);
 __decorate([
@@ -517,14 +495,14 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_j = typeof auth_dto_1.GlobalSignOutDto !== "undefined" && auth_dto_1.GlobalSignOutDto) === "function" ? _j : Object]),
+    __metadata("design:paramtypes", [typeof (_g = typeof auth_dto_1.GlobalSignOutDto !== "undefined" && auth_dto_1.GlobalSignOutDto) === "function" ? _g : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "globalSignOut", null);
 __decorate([
     (0, common_1.Post)('refresh-token'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_k = typeof auth_dto_1.RefreshTokenDto !== "undefined" && auth_dto_1.RefreshTokenDto) === "function" ? _k : Object]),
+    __metadata("design:paramtypes", [typeof (_h = typeof auth_dto_1.RefreshTokenDto !== "undefined" && auth_dto_1.RefreshTokenDto) === "function" ? _h : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refreshToken", null);
 exports.AuthController = AuthController = __decorate([
@@ -599,23 +577,17 @@ let AuthService = class AuthService {
     async signUp(email, password, name) {
         return this.cognitoService.signUp(email, password, name);
     }
-    async confirmSignUp(email, confirmationCode) {
-        return this.cognitoService.confirmSignUp(email, confirmationCode);
-    }
     async signIn(email, password) {
         return this.cognitoService.signIn(email, password);
-    }
-    async initiateMfaSetup(session) {
-        return this.cognitoService.initiateMfaSetup(session);
     }
     async verifyMFASetup(session, totpCode) {
         return this.cognitoService.verifyMFASetup(session, totpCode);
     }
-    async respondToMFASetupChallenge(session, totpCode, email) {
-        return this.cognitoService.respondToMFASetupChallenge(session, totpCode, email);
+    async completeMfaSetup(session, totpCode, email) {
+        return this.cognitoService.completeMfaSetup(session, totpCode, email);
     }
-    async respondToMFAChallenge(session, totpCode, email) {
-        return this.cognitoService.respondToMFAChallenge(session, totpCode, email);
+    async verifyMFA(session, totpCode, email) {
+        return this.cognitoService.verifyMFA(session, totpCode, email);
     }
     async forgotPassword(email) {
         return this.cognitoService.forgotPassword(email);
@@ -1310,26 +1282,26 @@ let CognitoService = class CognitoService {
         try {
             const command = new client_cognito_identity_provider_1.SignUpCommand(params);
             const result = await this.cognitoClient.send(command);
+            const confirmCommand = new client_cognito_identity_provider_1.AdminConfirmSignUpCommand({
+                UserPoolId: this.userPoolId,
+                Username: email,
+            });
+            await this.cognitoClient.send(confirmCommand);
+            const signInResult = await this.signIn(email, password);
+            if (signInResult.challengeName === client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP && signInResult.session) {
+                const mfaSetupResult = await this.initiateMfaSetup(signInResult.session);
+                return {
+                    userSub: result.UserSub,
+                    ...signInResult,
+                    ...mfaSetupResult,
+                    message: 'User registered and confirmed successfully. Please set up MFA.',
+                };
+            }
             return {
                 userSub: result.UserSub,
-                message: 'User registration successful. Please check your email for verification code.',
+                ...signInResult,
+                message: 'User registered and confirmed successfully.',
             };
-        }
-        catch (error) {
-            this.handleCognitoError(error);
-        }
-    }
-    async confirmSignUp(email, confirmationCode) {
-        const params = {
-            ClientId: this.clientId,
-            Username: email,
-            ConfirmationCode: confirmationCode,
-            SecretHash: this.generateSecretHash(email),
-        };
-        try {
-            const command = new client_cognito_identity_provider_1.ConfirmSignUpCommand(params);
-            await this.cognitoClient.send(command);
-            return { message: 'Email verification successful' };
         }
         catch (error) {
             this.handleCognitoError(error);
@@ -1413,7 +1385,7 @@ let CognitoService = class CognitoService {
             this.handleCognitoError(error);
         }
     }
-    async respondToMFASetupChallenge(session, totpCode, email) {
+    async completeMfaSetup(session, totpCode, email) {
         const params = {
             ClientId: this.clientId,
             ChallengeName: client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP,
@@ -1453,7 +1425,7 @@ let CognitoService = class CognitoService {
             this.handleCognitoError(error);
         }
     }
-    async respondToMFAChallenge(session, totpCode, email) {
+    async verifyMFA(session, totpCode, email) {
         const params = {
             ClientId: this.clientId,
             ChallengeName: client_cognito_identity_provider_1.ChallengeNameType.SOFTWARE_TOKEN_MFA,

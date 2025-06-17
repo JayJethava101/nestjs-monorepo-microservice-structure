@@ -6,30 +6,26 @@ WORKDIR /app
 
 # Install dependencies only when needed
 COPY package*.json ./
-COPY yarn.lock ./
 
-# Install dependencies and NestJS CLI
-RUN yarn install --frozen-lockfile && \
-    yarn global add @nestjs/cli
+# Copy TypeScript config files
+COPY tsconfig.json ./
+COPY tsconfig.build.json ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
 # Copy shared libraries
 COPY libs ./libs
 
-# Development stage
-FROM base AS development
-ENV NODE_ENV=development
-WORKDIR /app/apps/api-gateway
-CMD ["yarn", "run", "dev:api-gateway"]
+# Copy source code
+COPY apps/api-gateway ./apps/api-gateway
 
 # Builder stage
 FROM base AS builder
 ENV NODE_ENV=production
 
-# Copy source code
-COPY . .
-
-# Build the application
-RUN yarn build:api-gateway
+# Build only the api-gateway
+RUN cd apps/api-gateway && npm run build
 
 # Production stage
 FROM node:20-alpine AS production
@@ -38,7 +34,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 # Copy built assets from builder
-COPY --from=builder /app/dist/apps/api-gateway ./dist
+COPY --from=builder /app/apps/api-gateway/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 

@@ -49,6 +49,8 @@ const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const path_1 = __webpack_require__(/*! path */ "path");
 const database_module_1 = __webpack_require__(/*! ./modules/database/database.module */ "./apps/user-service/src/modules/database/database.module.ts");
 const app_controller_1 = __webpack_require__(/*! ./app.controller */ "./apps/user-service/src/app.controller.ts");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const shared_module_1 = __webpack_require__(/*! @libs/shared.module */ "./libs/shared.module.ts");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -61,6 +63,8 @@ exports.AppModule = AppModule = __decorate([
                 cache: true,
                 expandVariables: true,
             }),
+            mongoose_1.MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/logs'),
+            shared_module_1.SharedModule,
             user_module_1.UserModule,
             database_module_1.DatabaseModule,
         ],
@@ -132,6 +136,7 @@ const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
 const user_entity_1 = __webpack_require__(/*! ../../../../../libs/entity/user.entity */ "./libs/entity/user.entity.ts");
+const grpc_base_exception_1 = __webpack_require__(/*! ../../../../../libs/exceptions/grpc-base.exception */ "./libs/exceptions/grpc-base.exception.ts");
 let DatabaseService = DatabaseService_1 = class DatabaseService {
     constructor(configService) {
         this.configService = configService;
@@ -139,32 +144,37 @@ let DatabaseService = DatabaseService_1 = class DatabaseService {
         this.tenantConnections = new Map();
     }
     async getTenantConnection(tenantId, tenantDbName) {
-        if (this.tenantConnections.has(tenantId)) {
-            const connection = this.tenantConnections.get(tenantId);
-            if (connection?.isInitialized) {
-                return connection;
-            }
+        if (!tenantId || !tenantDbName) {
+            throw new grpc_base_exception_1.ResourceInternalException('Tenant ID and database name are required', 'database');
         }
-        const connection = new typeorm_1.DataSource({
-            type: 'postgres',
-            name: `tenant_${tenantId}`,
-            host: this.configService.get('PG_HOST', 'localhost'),
-            port: this.configService.get('PG_PORT', 5432),
-            username: this.configService.get('PG_USER', 'postgres'),
-            password: this.configService.get('PG_PASSWORD', '1234'),
-            database: tenantDbName,
-            entities: [user_entity_1.User],
-            synchronize: true,
-        });
         try {
+            if (this.tenantConnections.has(tenantId)) {
+                const connection = this.tenantConnections.get(tenantId);
+                if (connection?.isInitialized) {
+                    this.logger.debug(`Using existing connection for tenant ${tenantId}`);
+                    return connection;
+                }
+            }
+            this.logger.debug(`Creating new connection for tenant ${tenantId} to database ${tenantDbName}`);
+            const connection = new typeorm_1.DataSource({
+                type: 'postgres',
+                name: `tenant_${tenantId}`,
+                host: this.configService.get('PG_HOST', 'localhost'),
+                port: this.configService.get('PG_PORT', 5432),
+                username: this.configService.get('PG_USER', 'postgres'),
+                password: this.configService.get('PG_PASSWORD', '1234'),
+                database: tenantDbName,
+                entities: [user_entity_1.User],
+                synchronize: true,
+            });
             await connection.initialize();
             this.tenantConnections.set(tenantId, connection);
             this.logger.log(`Created new database connection for tenant ${tenantId}`);
             return connection;
         }
         catch (error) {
-            this.logger.error(`Failed to create database connection for tenant ${tenantId}`, error);
-            throw error;
+            this.logger.error(`Failed to create database connection for tenant ${tenantId}: ${error.message}`, error.stack);
+            throw new grpc_base_exception_1.ResourceInternalException(`Database connection failed: ${error.message}`, 'database');
         }
     }
     async onModuleDestroy() {
@@ -209,6 +219,7 @@ const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/user-service/src/modules/user/user.service.ts");
 const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
+const grpc_base_exception_1 = __webpack_require__(/*! @libs/exceptions/grpc-base.exception */ "./libs/exceptions/grpc-base.exception.ts");
 let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -222,37 +233,86 @@ let UserController = class UserController {
         return { tenantId, dbName };
     }
     async create(createUserDto, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        return this.userService.create(createUserDto, { tenantId, dbName });
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            return await this.userService.create(createUserDto, { tenantId, dbName });
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
     async findOne(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        return this.userService.findOne(data.id, { tenantId, dbName });
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            return await this.userService.findOne(data.id, { tenantId, dbName });
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
     async update(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        const { id, ...updateUserDto } = data;
-        const user = await this.userService.update(id, updateUserDto, { tenantId, dbName });
-        return user || null;
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            const { id, ...updateUserDto } = data;
+            const user = await this.userService.update(id, updateUserDto, { tenantId, dbName });
+            return user || null;
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
     async remove(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        await this.userService.remove(data.id, { tenantId, dbName });
-        return { success: true };
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            await this.userService.remove(data.id, { tenantId, dbName });
+            return { success: true };
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
     async findAll(data, metadata) {
-        const { tenantId, dbName } = this.getTenantInfo(metadata);
-        return this.userService.findAll(data, { tenantId, dbName });
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            return await this.userService.findAll(data, { tenantId, dbName });
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
     async findAllWithNameCount(data, metadata) {
-        return {
-            items: [{
-                    name: "jay",
-                    characters: 3,
-                    symbols: 5
-                }],
-            total: 10
-        };
+        try {
+            const { tenantId, dbName } = this.getTenantInfo(metadata);
+            return {
+                items: [{
+                        name: "jay",
+                        characters: 3,
+                        symbols: 5
+                    }],
+                total: 10
+            };
+        }
+        catch (error) {
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException || error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw new microservices_1.RpcException(error.message);
+            }
+            throw new microservices_1.RpcException('Internal server error');
+        }
     }
 };
 exports.UserController = UserController;
@@ -385,14 +445,26 @@ let UserService = UserService_1 = class UserService {
     }
     async create(createUserDto, dbOptions) {
         try {
+            this.logger.debug(`Attempting to create user for tenant ${dbOptions.tenantId} in database ${dbOptions.dbName}`);
             const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
+            if (!connection) {
+                throw new grpc_base_exception_1.ResourceInternalException('Database connection failed', this.MODULE_NAME);
+            }
             const userRepository = connection.getRepository(user_entity_1.User);
             const user = userRepository.create(createUserDto);
             const savedUser = await userRepository.save(user);
+            this.logger.debug(`Successfully created user with ID: ${savedUser.id}`);
             return savedUser;
         }
         catch (error) {
-            throw new grpc_base_exception_1.ResourceInternalException('Failed to create user', this.MODULE_NAME);
+            this.logger.error(`Failed to create user: ${error.message}`, error.stack);
+            if (error instanceof grpc_base_exception_1.ResourceNotFoundException) {
+                throw error;
+            }
+            if (error instanceof grpc_base_exception_1.ResourceInternalException) {
+                throw error;
+            }
+            throw new grpc_base_exception_1.ResourceInternalException(`Failed to create user: ${error.message}`, this.MODULE_NAME);
         }
     }
     async findAll(options, dbOptions) {
@@ -747,6 +819,156 @@ exports.GrpcExceptionFilter = GrpcExceptionFilter = GrpcExceptionFilter_1 = __de
 
 /***/ }),
 
+/***/ "./libs/interceptors/logging.interceptor.ts":
+/*!**************************************************!*\
+  !*** ./libs/interceptors/logging.interceptor.ts ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var LoggingInterceptor_1;
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LoggingInterceptor = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const operators_1 = __webpack_require__(/*! rxjs/operators */ "rxjs/operators");
+const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const ua_parser_js_1 = __webpack_require__(/*! ua-parser-js */ "ua-parser-js");
+const logging_service_1 = __webpack_require__(/*! ../services/logging.service */ "./libs/services/logging.service.ts");
+let LoggingInterceptor = LoggingInterceptor_1 = class LoggingInterceptor {
+    constructor(loggingService, configService) {
+        this.loggingService = loggingService;
+        this.configService = configService;
+        this.logger = new common_1.Logger(LoggingInterceptor_1.name);
+        this.sensitiveHeaders = ['authorization', 'cookie', 'set-cookie'];
+        this.excludedPaths = this.configService.get('LOGGING_EXCLUDED_PATHS', [
+            '/health',
+            '/metrics',
+            '/favicon.ico',
+        ]);
+    }
+    intercept(context, next) {
+        const request = context.switchToHttp().getRequest();
+        const response = context.switchToHttp().getResponse();
+        if (this.shouldSkipLogging(request)) {
+            return next.handle();
+        }
+        const startTime = Date.now();
+        const parser = new ua_parser_js_1.UAParser(request.headers['user-agent']);
+        const requestId = Array.isArray(request.headers['x-request-id'])
+            ? request.headers['x-request-id'][0]
+            : request.headers['x-request-id'] || this.generateRequestId();
+        const tenantId = Array.isArray(request.headers['x-tenant-id'])
+            ? request.headers['x-tenant-id'][0]
+            : request.headers['x-tenant-id'];
+        const correlationId = Array.isArray(request.headers['x-correlation-id'])
+            ? request.headers['x-correlation-id'][0]
+            : request.headers['x-correlation-id'];
+        const sessionId = Array.isArray(request.headers['x-session-id'])
+            ? request.headers['x-session-id'][0]
+            : request.headers['x-session-id'];
+        const requestData = {
+            request_id: requestId,
+            method: request.method,
+            url: request.originalUrl,
+            request_body: this.sanitizeData(request.body),
+            request_headers: this.sanitizeHeaders(request.headers),
+            device_info: parser.getResult(),
+            userId: request.user?.id,
+            tenant_id: tenantId,
+            correlation_id: correlationId,
+            session_id: sessionId,
+            service_name: this.configService.get('SERVICE_NAME', 'api-gateway'),
+        };
+        return next.handle().pipe((0, operators_1.tap)({
+            next: (responseBody) => {
+                const responseTime = Date.now() - startTime;
+                this.loggingService.log({
+                    ...requestData,
+                    response_body: this.sanitizeData(responseBody),
+                    response_headers: this.sanitizeHeaders(response.getHeaders()),
+                    status_code: response.statusCode,
+                    response_time: responseTime,
+                    payload_size: this.calculatePayloadSize(responseBody),
+                });
+            },
+            error: (error) => {
+                const responseTime = Date.now() - startTime;
+                this.loggingService.log({
+                    ...requestData,
+                    response_body: this.sanitizeData(error.response || {}),
+                    response_headers: this.sanitizeHeaders(response.getHeaders()),
+                    status_code: error.status || 500,
+                    response_time: responseTime,
+                    payload_size: this.calculatePayloadSize(error.response),
+                    error_details: {
+                        message: error.message,
+                        stack: error.stack,
+                        code: error.code,
+                    },
+                });
+            },
+        }));
+    }
+    shouldSkipLogging(request) {
+        return this.excludedPaths.some((path) => request.path.startsWith(path));
+    }
+    generateRequestId() {
+        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+    calculatePayloadSize(data) {
+        try {
+            return Buffer.byteLength(JSON.stringify(data));
+        }
+        catch {
+            return 0;
+        }
+    }
+    sanitizeData(data) {
+        if (!data)
+            return data;
+        if (typeof data !== 'object')
+            return data;
+        const sanitized = { ...data };
+        const sensitiveFields = ['password', 'token', 'secret', 'key'];
+        Object.keys(sanitized).forEach((key) => {
+            if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
+                sanitized[key] = '[REDACTED]';
+            }
+            else if (typeof sanitized[key] === 'object') {
+                sanitized[key] = this.sanitizeData(sanitized[key]);
+            }
+        });
+        return sanitized;
+    }
+    sanitizeHeaders(headers) {
+        const sanitized = {};
+        for (const [key, value] of Object.entries(headers)) {
+            sanitized[key] = this.sensitiveHeaders.includes(key.toLowerCase())
+                ? '[REDACTED]'
+                : String(value);
+        }
+        return sanitized;
+    }
+};
+exports.LoggingInterceptor = LoggingInterceptor;
+exports.LoggingInterceptor = LoggingInterceptor = LoggingInterceptor_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof logging_service_1.LoggingService !== "undefined" && logging_service_1.LoggingService) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
+], LoggingInterceptor);
+
+
+/***/ }),
+
 /***/ "./libs/pipes/validation.pipe.ts":
 /*!***************************************!*\
   !*** ./libs/pipes/validation.pipe.ts ***!
@@ -795,6 +1017,196 @@ exports.DtoValidationPipe = DtoValidationPipe = __decorate([
 
 /***/ }),
 
+/***/ "./libs/schemas/api-log.schema.ts":
+/*!****************************************!*\
+  !*** ./libs/schemas/api-log.schema.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApiLogSchema = exports.ApiLog = void 0;
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const mongoose_2 = __webpack_require__(/*! mongoose */ "mongoose");
+let ApiLog = class ApiLog extends mongoose_2.Document {
+};
+exports.ApiLog = ApiLog;
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "request_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "method", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "url", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "request_body", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", typeof (_a = typeof Record !== "undefined" && Record) === "function" ? _a : Object)
+], ApiLog.prototype, "request_headers", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "device_info", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "userId", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "tenant_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "correlation_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "session_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "service_name", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "response_body", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], ApiLog.prototype, "response_headers", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "status_code", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "response_time", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "payload_size", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "error_details", void 0);
+exports.ApiLog = ApiLog = __decorate([
+    (0, mongoose_1.Schema)({ timestamps: true })
+], ApiLog);
+exports.ApiLogSchema = mongoose_1.SchemaFactory.createForClass(ApiLog);
+
+
+/***/ }),
+
+/***/ "./libs/services/logging.service.ts":
+/*!******************************************!*\
+  !*** ./libs/services/logging.service.ts ***!
+  \******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var LoggingService_1;
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LoggingService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const mongoose_2 = __webpack_require__(/*! mongoose */ "mongoose");
+const api_log_schema_1 = __webpack_require__(/*! ../schemas/api-log.schema */ "./libs/schemas/api-log.schema.ts");
+let LoggingService = LoggingService_1 = class LoggingService {
+    constructor(apiLogModel) {
+        this.apiLogModel = apiLogModel;
+        this.logger = new common_1.Logger(LoggingService_1.name);
+    }
+    async log(data) {
+        try {
+            const log = new this.apiLogModel(data);
+            await log.save();
+        }
+        catch (error) {
+            this.logger.error('Failed to save log:', error);
+        }
+    }
+};
+exports.LoggingService = LoggingService;
+exports.LoggingService = LoggingService = LoggingService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, mongoose_1.InjectModel)(api_log_schema_1.ApiLog.name)),
+    __metadata("design:paramtypes", [typeof (_a = typeof mongoose_2.Model !== "undefined" && mongoose_2.Model) === "function" ? _a : Object])
+], LoggingService);
+
+
+/***/ }),
+
+/***/ "./libs/shared.module.ts":
+/*!*******************************!*\
+  !*** ./libs/shared.module.ts ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SharedModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const api_log_schema_1 = __webpack_require__(/*! ./schemas/api-log.schema */ "./libs/schemas/api-log.schema.ts");
+const logging_service_1 = __webpack_require__(/*! ./services/logging.service */ "./libs/services/logging.service.ts");
+const logging_interceptor_1 = __webpack_require__(/*! ./interceptors/logging.interceptor */ "./libs/interceptors/logging.interceptor.ts");
+let SharedModule = class SharedModule {
+};
+exports.SharedModule = SharedModule;
+exports.SharedModule = SharedModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            mongoose_1.MongooseModule.forFeature([
+                { name: api_log_schema_1.ApiLog.name, schema: api_log_schema_1.ApiLogSchema },
+            ]),
+        ],
+        providers: [logging_service_1.LoggingService, logging_interceptor_1.LoggingInterceptor],
+        exports: [logging_service_1.LoggingService, logging_interceptor_1.LoggingInterceptor],
+    })
+], SharedModule);
+
+
+/***/ }),
+
 /***/ "@nestjs/common":
 /*!*********************************!*\
   !*** external "@nestjs/common" ***!
@@ -832,6 +1244,16 @@ module.exports = require("@nestjs/core");
 /***/ ((module) => {
 
 module.exports = require("@nestjs/microservices");
+
+/***/ }),
+
+/***/ "@nestjs/mongoose":
+/*!***********************************!*\
+  !*** external "@nestjs/mongoose" ***!
+  \***********************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/mongoose");
 
 /***/ }),
 
@@ -875,6 +1297,16 @@ module.exports = require("dotenv/config");
 
 /***/ }),
 
+/***/ "mongoose":
+/*!***************************!*\
+  !*** external "mongoose" ***!
+  \***************************/
+/***/ ((module) => {
+
+module.exports = require("mongoose");
+
+/***/ }),
+
 /***/ "path":
 /*!***********************!*\
   !*** external "path" ***!
@@ -895,6 +1327,16 @@ module.exports = require("rxjs");
 
 /***/ }),
 
+/***/ "rxjs/operators":
+/*!*********************************!*\
+  !*** external "rxjs/operators" ***!
+  \*********************************/
+/***/ ((module) => {
+
+module.exports = require("rxjs/operators");
+
+/***/ }),
+
 /***/ "typeorm":
 /*!**************************!*\
   !*** external "typeorm" ***!
@@ -902,6 +1344,16 @@ module.exports = require("rxjs");
 /***/ ((module) => {
 
 module.exports = require("typeorm");
+
+/***/ }),
+
+/***/ "ua-parser-js":
+/*!*******************************!*\
+  !*** external "ua-parser-js" ***!
+  \*******************************/
+/***/ ((module) => {
+
+module.exports = require("ua-parser-js");
 
 /***/ })
 
@@ -950,6 +1402,8 @@ const grpc_exception_filter_1 = __webpack_require__(/*! ../../../libs/filters/gr
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const validation_pipe_1 = __webpack_require__(/*! ../../../libs/pipes/validation.pipe */ "./libs/pipes/validation.pipe.ts");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const logging_interceptor_1 = __webpack_require__(/*! @libs/interceptors/logging.interceptor */ "./libs/interceptors/logging.interceptor.ts");
+const logging_service_1 = __webpack_require__(/*! @libs/services/logging.service */ "./libs/services/logging.service.ts");
 async function bootstrap() {
     const app = await core_1.NestFactory.createMicroservice(app_module_1.AppModule, {
         transport: microservices_1.Transport.GRPC,
@@ -961,10 +1415,12 @@ async function bootstrap() {
     });
     const logger = new common_1.Logger('Bootstrap');
     const configService = app.get(config_1.ConfigService);
+    const loggingService = app.get(logging_service_1.LoggingService);
     const port = configService.get('USER_SERVICE_URL', 'localhost:5000').split(':')[1] || '5000';
     const serviceName = configService.get('USER_SERVICE_PKG', 'user');
     app.useGlobalPipes(new validation_pipe_1.DtoValidationPipe());
     app.useGlobalFilters(new grpc_exception_filter_1.GrpcExceptionFilter(serviceName));
+    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(loggingService, configService));
     await app.listen();
     logger.log(`User Service is running on port ${port}`);
 }

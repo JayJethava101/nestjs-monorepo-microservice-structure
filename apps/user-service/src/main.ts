@@ -7,6 +7,8 @@ import { GrpcExceptionFilter } from '../../../libs/filters/grpc-exception.filter
 import { Logger } from '@nestjs/common';
 import { DtoValidationPipe } from '../../../libs/pipes/validation.pipe';
 import { ConfigService } from '@nestjs/config';
+import { LoggingInterceptor } from '@libs/interceptors/logging.interceptor';
+import { LoggingService } from '@libs/services/logging.service';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
@@ -20,6 +22,7 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
+  const loggingService = app.get(LoggingService);
   const port = configService.get<string>('USER_SERVICE_URL', 'localhost:5000').split(':')[1] || '5000';
   const serviceName = configService.get<string>('USER_SERVICE_PKG', 'user')
 
@@ -28,6 +31,11 @@ async function bootstrap() {
 
   // Use custom exception filter
   app.useGlobalFilters(new GrpcExceptionFilter(serviceName));
+
+  // Global interceptors
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(loggingService, configService),
+  );
 
   await app.listen();
   logger.log(`User Service is running on port ${port}`);

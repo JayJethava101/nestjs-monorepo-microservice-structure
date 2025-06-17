@@ -46,6 +46,7 @@ exports.AppModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
 const app_controller_1 = __webpack_require__(/*! ./app.controller */ "./apps/api-gateway/src/app.controller.ts");
 const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/api-gateway/src/modules/user/user.module.ts");
 const tenant_module_1 = __webpack_require__(/*! ./modules/tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
@@ -53,6 +54,7 @@ const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/tenant.entity *
 const path_1 = __webpack_require__(/*! path */ "path");
 const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
 const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
+const shared_module_1 = __webpack_require__(/*! @libs/shared.module */ "./libs/shared.module.ts");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -65,6 +67,7 @@ exports.AppModule = AppModule = __decorate([
                 cache: true,
                 expandVariables: true,
             }),
+            mongoose_1.MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/logs'),
             throttler_1.ThrottlerModule.forRoot([{
                     ttl: 60000,
                     limit: 10,
@@ -80,6 +83,7 @@ exports.AppModule = AppModule = __decorate([
                 entities: [tenant_entity_1.Tenant],
                 synchronize: true,
             }),
+            shared_module_1.SharedModule,
             user_module_1.UserModule,
             tenant_module_1.TenantModule,
         ],
@@ -606,6 +610,7 @@ const createError = __webpack_require__(/*! http-errors */ "http-errors");
 const tenant_service_1 = __webpack_require__(/*! ../tenant/tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
 const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const operators_1 = __webpack_require__(/*! rxjs/operators */ "rxjs/operators");
 let UserController = class UserController {
     constructor(client, tenantService) {
         this.client = client;
@@ -633,26 +638,51 @@ let UserController = class UserController {
     }
     async create(createUserDto, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.createUser(createUserDto, metadata);
+        return this.userService.createUser(createUserDto, metadata).pipe((0, operators_1.catchError)(error => {
+            if (error instanceof microservices_1.RpcException) {
+                throw createError(400, error.message);
+            }
+            throw createError(500, 'Internal server error');
+        }));
     }
     async findAll(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.listUsers({}, metadata);
+        return this.userService.listUsers({}, metadata).pipe((0, operators_1.catchError)(error => {
+            if (error instanceof microservices_1.RpcException) {
+                throw createError(400, error.message);
+            }
+            throw createError(500, 'Internal server error');
+        }));
     }
     async findOne(id, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.getUser({ id }, metadata);
+        return this.userService.getUser({ id }, metadata).pipe((0, operators_1.catchError)(error => {
+            if (error instanceof microservices_1.RpcException) {
+                throw createError(400, error.message);
+            }
+            throw createError(500, 'Internal server error');
+        }));
     }
     async update(id, updateUserDto, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
         return this.userService.updateUser({
             id,
             ...updateUserDto
-        }, metadata);
+        }, metadata).pipe((0, operators_1.catchError)(error => {
+            if (error instanceof microservices_1.RpcException) {
+                throw createError(400, error.message);
+            }
+            throw createError(500, 'Internal server error');
+        }));
     }
     async remove(id, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.deleteUser({ id }, metadata);
+        return this.userService.deleteUser({ id }, metadata).pipe((0, operators_1.catchError)(error => {
+            if (error instanceof microservices_1.RpcException) {
+                throw createError(400, error.message);
+            }
+            throw createError(500, 'Internal server error');
+        }));
     }
 };
 exports.UserController = UserController;
@@ -863,6 +893,156 @@ __decorate([
 
 /***/ }),
 
+/***/ "./libs/interceptors/logging.interceptor.ts":
+/*!**************************************************!*\
+  !*** ./libs/interceptors/logging.interceptor.ts ***!
+  \**************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var LoggingInterceptor_1;
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LoggingInterceptor = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const operators_1 = __webpack_require__(/*! rxjs/operators */ "rxjs/operators");
+const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const ua_parser_js_1 = __webpack_require__(/*! ua-parser-js */ "ua-parser-js");
+const logging_service_1 = __webpack_require__(/*! ../services/logging.service */ "./libs/services/logging.service.ts");
+let LoggingInterceptor = LoggingInterceptor_1 = class LoggingInterceptor {
+    constructor(loggingService, configService) {
+        this.loggingService = loggingService;
+        this.configService = configService;
+        this.logger = new common_1.Logger(LoggingInterceptor_1.name);
+        this.sensitiveHeaders = ['authorization', 'cookie', 'set-cookie'];
+        this.excludedPaths = this.configService.get('LOGGING_EXCLUDED_PATHS', [
+            '/health',
+            '/metrics',
+            '/favicon.ico',
+        ]);
+    }
+    intercept(context, next) {
+        const request = context.switchToHttp().getRequest();
+        const response = context.switchToHttp().getResponse();
+        if (this.shouldSkipLogging(request)) {
+            return next.handle();
+        }
+        const startTime = Date.now();
+        const parser = new ua_parser_js_1.UAParser(request.headers['user-agent']);
+        const requestId = Array.isArray(request.headers['x-request-id'])
+            ? request.headers['x-request-id'][0]
+            : request.headers['x-request-id'] || this.generateRequestId();
+        const tenantId = Array.isArray(request.headers['x-tenant-id'])
+            ? request.headers['x-tenant-id'][0]
+            : request.headers['x-tenant-id'];
+        const correlationId = Array.isArray(request.headers['x-correlation-id'])
+            ? request.headers['x-correlation-id'][0]
+            : request.headers['x-correlation-id'];
+        const sessionId = Array.isArray(request.headers['x-session-id'])
+            ? request.headers['x-session-id'][0]
+            : request.headers['x-session-id'];
+        const requestData = {
+            request_id: requestId,
+            method: request.method,
+            url: request.originalUrl,
+            request_body: this.sanitizeData(request.body),
+            request_headers: this.sanitizeHeaders(request.headers),
+            device_info: parser.getResult(),
+            userId: request.user?.id,
+            tenant_id: tenantId,
+            correlation_id: correlationId,
+            session_id: sessionId,
+            service_name: this.configService.get('SERVICE_NAME', 'api-gateway'),
+        };
+        return next.handle().pipe((0, operators_1.tap)({
+            next: (responseBody) => {
+                const responseTime = Date.now() - startTime;
+                this.loggingService.log({
+                    ...requestData,
+                    response_body: this.sanitizeData(responseBody),
+                    response_headers: this.sanitizeHeaders(response.getHeaders()),
+                    status_code: response.statusCode,
+                    response_time: responseTime,
+                    payload_size: this.calculatePayloadSize(responseBody),
+                });
+            },
+            error: (error) => {
+                const responseTime = Date.now() - startTime;
+                this.loggingService.log({
+                    ...requestData,
+                    response_body: this.sanitizeData(error.response || {}),
+                    response_headers: this.sanitizeHeaders(response.getHeaders()),
+                    status_code: error.status || 500,
+                    response_time: responseTime,
+                    payload_size: this.calculatePayloadSize(error.response),
+                    error_details: {
+                        message: error.message,
+                        stack: error.stack,
+                        code: error.code,
+                    },
+                });
+            },
+        }));
+    }
+    shouldSkipLogging(request) {
+        return this.excludedPaths.some((path) => request.path.startsWith(path));
+    }
+    generateRequestId() {
+        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+    calculatePayloadSize(data) {
+        try {
+            return Buffer.byteLength(JSON.stringify(data));
+        }
+        catch {
+            return 0;
+        }
+    }
+    sanitizeData(data) {
+        if (!data)
+            return data;
+        if (typeof data !== 'object')
+            return data;
+        const sanitized = { ...data };
+        const sensitiveFields = ['password', 'token', 'secret', 'key'];
+        Object.keys(sanitized).forEach((key) => {
+            if (sensitiveFields.some((field) => key.toLowerCase().includes(field))) {
+                sanitized[key] = '[REDACTED]';
+            }
+            else if (typeof sanitized[key] === 'object') {
+                sanitized[key] = this.sanitizeData(sanitized[key]);
+            }
+        });
+        return sanitized;
+    }
+    sanitizeHeaders(headers) {
+        const sanitized = {};
+        for (const [key, value] of Object.entries(headers)) {
+            sanitized[key] = this.sensitiveHeaders.includes(key.toLowerCase())
+                ? '[REDACTED]'
+                : String(value);
+        }
+        return sanitized;
+    }
+};
+exports.LoggingInterceptor = LoggingInterceptor;
+exports.LoggingInterceptor = LoggingInterceptor = LoggingInterceptor_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof logging_service_1.LoggingService !== "undefined" && logging_service_1.LoggingService) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
+], LoggingInterceptor);
+
+
+/***/ }),
+
 /***/ "./libs/interceptors/transform.interceptor.ts":
 /*!****************************************************!*\
   !*** ./libs/interceptors/transform.interceptor.ts ***!
@@ -909,6 +1089,196 @@ exports.TransformInterceptor = TransformInterceptor;
 exports.TransformInterceptor = TransformInterceptor = __decorate([
     (0, common_1.Injectable)()
 ], TransformInterceptor);
+
+
+/***/ }),
+
+/***/ "./libs/schemas/api-log.schema.ts":
+/*!****************************************!*\
+  !*** ./libs/schemas/api-log.schema.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ApiLogSchema = exports.ApiLog = void 0;
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const mongoose_2 = __webpack_require__(/*! mongoose */ "mongoose");
+let ApiLog = class ApiLog extends mongoose_2.Document {
+};
+exports.ApiLog = ApiLog;
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "request_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "method", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "url", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "request_body", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", typeof (_a = typeof Record !== "undefined" && Record) === "function" ? _a : Object)
+], ApiLog.prototype, "request_headers", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "device_info", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "userId", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "tenant_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "correlation_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], ApiLog.prototype, "session_id", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", String)
+], ApiLog.prototype, "service_name", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "response_body", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", typeof (_b = typeof Record !== "undefined" && Record) === "function" ? _b : Object)
+], ApiLog.prototype, "response_headers", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "status_code", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "response_time", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true }),
+    __metadata("design:type", Number)
+], ApiLog.prototype, "payload_size", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], ApiLog.prototype, "error_details", void 0);
+exports.ApiLog = ApiLog = __decorate([
+    (0, mongoose_1.Schema)({ timestamps: true })
+], ApiLog);
+exports.ApiLogSchema = mongoose_1.SchemaFactory.createForClass(ApiLog);
+
+
+/***/ }),
+
+/***/ "./libs/services/logging.service.ts":
+/*!******************************************!*\
+  !*** ./libs/services/logging.service.ts ***!
+  \******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var LoggingService_1;
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LoggingService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const mongoose_2 = __webpack_require__(/*! mongoose */ "mongoose");
+const api_log_schema_1 = __webpack_require__(/*! ../schemas/api-log.schema */ "./libs/schemas/api-log.schema.ts");
+let LoggingService = LoggingService_1 = class LoggingService {
+    constructor(apiLogModel) {
+        this.apiLogModel = apiLogModel;
+        this.logger = new common_1.Logger(LoggingService_1.name);
+    }
+    async log(data) {
+        try {
+            const log = new this.apiLogModel(data);
+            await log.save();
+        }
+        catch (error) {
+            this.logger.error('Failed to save log:', error);
+        }
+    }
+};
+exports.LoggingService = LoggingService;
+exports.LoggingService = LoggingService = LoggingService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, mongoose_1.InjectModel)(api_log_schema_1.ApiLog.name)),
+    __metadata("design:paramtypes", [typeof (_a = typeof mongoose_2.Model !== "undefined" && mongoose_2.Model) === "function" ? _a : Object])
+], LoggingService);
+
+
+/***/ }),
+
+/***/ "./libs/shared.module.ts":
+/*!*******************************!*\
+  !*** ./libs/shared.module.ts ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SharedModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const api_log_schema_1 = __webpack_require__(/*! ./schemas/api-log.schema */ "./libs/schemas/api-log.schema.ts");
+const logging_service_1 = __webpack_require__(/*! ./services/logging.service */ "./libs/services/logging.service.ts");
+const logging_interceptor_1 = __webpack_require__(/*! ./interceptors/logging.interceptor */ "./libs/interceptors/logging.interceptor.ts");
+let SharedModule = class SharedModule {
+};
+exports.SharedModule = SharedModule;
+exports.SharedModule = SharedModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            mongoose_1.MongooseModule.forFeature([
+                { name: api_log_schema_1.ApiLog.name, schema: api_log_schema_1.ApiLogSchema },
+            ]),
+        ],
+        providers: [logging_service_1.LoggingService, logging_interceptor_1.LoggingInterceptor],
+        exports: [logging_service_1.LoggingService, logging_interceptor_1.LoggingInterceptor],
+    })
+], SharedModule);
 
 
 /***/ }),
@@ -973,6 +1343,16 @@ module.exports = require("@nestjs/microservices");
 
 /***/ }),
 
+/***/ "@nestjs/mongoose":
+/*!***********************************!*\
+  !*** external "@nestjs/mongoose" ***!
+  \***********************************/
+/***/ ((module) => {
+
+module.exports = require("@nestjs/mongoose");
+
+/***/ }),
+
 /***/ "@nestjs/swagger":
 /*!**********************************!*\
   !*** external "@nestjs/swagger" ***!
@@ -1023,6 +1403,16 @@ module.exports = require("http-errors");
 
 /***/ }),
 
+/***/ "mongoose":
+/*!***************************!*\
+  !*** external "mongoose" ***!
+  \***************************/
+/***/ ((module) => {
+
+module.exports = require("mongoose");
+
+/***/ }),
+
 /***/ "path":
 /*!***********************!*\
   !*** external "path" ***!
@@ -1050,6 +1440,16 @@ module.exports = require("rxjs/operators");
 /***/ ((module) => {
 
 module.exports = require("typeorm");
+
+/***/ }),
+
+/***/ "ua-parser-js":
+/*!*******************************!*\
+  !*** external "ua-parser-js" ***!
+  \*******************************/
+/***/ ((module) => {
+
+module.exports = require("ua-parser-js");
 
 /***/ }),
 
@@ -1106,12 +1506,15 @@ const global_exception_filter_1 = __webpack_require__(/*! ./filters/global-excep
 const throttler_exception_filter_1 = __webpack_require__(/*! ./filters/throttler-exception.filter */ "./apps/api-gateway/src/filters/throttler-exception.filter.ts");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 const transform_interceptor_1 = __webpack_require__(/*! @libs/interceptors/transform.interceptor */ "./libs/interceptors/transform.interceptor.ts");
+const logging_interceptor_1 = __webpack_require__(/*! @libs/interceptors/logging.interceptor */ "./libs/interceptors/logging.interceptor.ts");
+const logging_service_1 = __webpack_require__(/*! @libs/services/logging.service */ "./libs/services/logging.service.ts");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
+    const loggingService = app.get(logging_service_1.LoggingService);
     const port = configService.get('PORT', 3000);
     app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter(), new throttler_exception_filter_1.ThrottlerExceptionFilter());
-    app.useGlobalInterceptors(new transform_interceptor_1.TransformInterceptor());
+    app.useGlobalInterceptors(new transform_interceptor_1.TransformInterceptor(), new logging_interceptor_1.LoggingInterceptor(loggingService, configService));
     const config = new swagger_1.DocumentBuilder()
         .setTitle('API Gateway')
         .setDescription('The API Gateway for the microservices architecture')

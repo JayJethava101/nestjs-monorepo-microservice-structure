@@ -6,10 +6,13 @@ import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { ThrottlerExceptionFilter } from './filters/throttler-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { TransformInterceptor } from '@libs/interceptors/transform.interceptor';
+import { LoggingInterceptor } from '@libs/interceptors/logging.interceptor';
+import { LoggingService } from '@libs/services/logging.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const loggingService = app.get(LoggingService);
   const port = configService.get<number>('PORT', 3000);
 
   // // Global pipes
@@ -26,7 +29,10 @@ async function bootstrap() {
   );
 
   // Global interceptors
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(
+    new TransformInterceptor(),
+    new LoggingInterceptor(loggingService, configService),
+  );
 
   // Swagger configuration
   const config = new DocumentBuilder()

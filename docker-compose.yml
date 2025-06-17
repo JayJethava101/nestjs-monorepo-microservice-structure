@@ -19,9 +19,11 @@ services:
       - PG_PASSWORD=postgres
       - PG_MANAGEMENT_DB=sspm_central_db
       - USER_SERVICE_URL=user-service:5001
+      - MONGODB_URI=mongodb://mongodb:27017/logs
     depends_on:
       - postgres
       - user-service
+      - mongodb
 
   user-service:
     build:
@@ -40,8 +42,10 @@ services:
       - PG_USER=postgres
       - PG_PASSWORD=postgres
       - USER_SERVICE_URL=user-service:5001
+      - MONGODB_URI=mongodb://mongodb:27017/logs
     depends_on:
       - postgres
+      - mongodb
 
   postgres:
     image: postgres:15-alpine
@@ -54,5 +58,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
 volumes:
-  postgres_data: 
+  postgres_data:
+  mongodb_data: 

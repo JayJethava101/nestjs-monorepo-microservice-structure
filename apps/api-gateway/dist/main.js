@@ -597,6 +597,7 @@ let AuthService = class AuthService {
         if (userId && tenantId) {
             await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
         }
+        await this.assignDefaultRole(email);
         return result;
     }
     async verifyMFA(session, totpCode, email) {
@@ -613,7 +614,7 @@ let AuthService = class AuthService {
         return this.cognitoService.changePassword(email, currentPassword, newPassword);
     }
     async assignDefaultRole(email) {
-        await this.rbacService.assignRoleToUser(email, 'user');
+        await this.rbacService.assignRoleToUser(email, 'read-only');
     }
     async globalSignOut(globalSignOutDto) {
         const { accessToken } = globalSignOutDto;

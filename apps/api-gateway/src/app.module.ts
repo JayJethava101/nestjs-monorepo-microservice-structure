@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { Tenant } from './modules/tenant/tenant.entity';
+import { UserTenantMap } from './modules/user-tenant-map/user-tenant-map.entity';
 import { join } from 'path';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -13,6 +14,7 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { UtilsModule } from './modules/utils/utils.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { CognitoModule } from './modules/cognito/cognito.module';
+import { UserTenantMapModule } from './modules/user-tenant-map/user-tenant-map.module';
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import { CognitoModule } from './modules/cognito/cognito.module';
       username: process.env.PG_USER || 'postgres',
       password: process.env.PG_PASSWORD || '1234',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
-      entities: [Tenant],
+      entities: [Tenant, UserTenantMap],
       synchronize: true, // todo: Set to false in production
     }),
 
@@ -58,7 +60,8 @@ import { CognitoModule } from './modules/cognito/cognito.module';
     RbacModule,
     UserModule,
     TenantModule,
-    CognitoModule
+    CognitoModule,
+    UserTenantMapModule
   ],
   controllers: [AppController],
   providers: [

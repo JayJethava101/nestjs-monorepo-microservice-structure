@@ -19,6 +19,19 @@ export class SignUpDto {
   @MinLength(2, { message: 'Name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Name must not exceed 50 characters' })
   name: string;
+
+  @IsString({ message: 'tenantId must be a string' })
+  @IsNotEmpty({ message: 'tenantId is required' })
+  @MinLength(2, { message: 'tenantId must be at least 2 characters long' })
+  @MaxLength(50, { message: 'tenantId must not exceed 50 characters' })
+  tenantId: string;
+
+  
+  @IsString({ message: 'role must be a string' })
+  @IsNotEmpty({ message: 'role is required' })
+  @MinLength(2, { message: 'role must be at least 2 characters long' })
+  @MaxLength(50, { message: 'role must not exceed 50 characters' })
+  role: string;
 }
 
 export class ConfirmSignUpDto {

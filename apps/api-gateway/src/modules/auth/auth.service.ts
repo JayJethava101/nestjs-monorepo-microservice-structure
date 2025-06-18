@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CognitoService } from '../cognito/cognito.service';
 import { RbacService } from './../rbac/rbac.service';
+import { UserTenantMapService } from '../user-tenant-map/user-tenant-map.service';
 import { GlobalSignOutDto, ChangePasswordDto  } from './dto/auth-dto';
 
 @Injectable()
@@ -8,11 +9,12 @@ export class AuthService {
   constructor(
     private readonly cognitoService: CognitoService,
     private readonly rbacService: RbacService,
-   
+    private readonly userTenantMapService: UserTenantMapService,
   ) {}
 
-  async signUp(email: string, password: string, name: string) {
-    return this.cognitoService.signUp(email, password, name);
+  async signUp(email: string, password: string, name: string, tenantId: string, role: string) {
+    // todo: add the user in the cognito user group based on the role
+    return this.cognitoService.signUp(email, password, name, tenantId);
   }
 
   async signIn(email: string, password: string) {
@@ -20,12 +22,24 @@ export class AuthService {
   }
 
   async verifyMFASetup(session: string, totpCode: string, email: string) {
-    return this.cognitoService.verifyMFASetup(session, totpCode, email);
+    const result = await this.cognitoService.verifyMFASetup(session, totpCode, email);
+    const userId = result.userId;
+    const tenantId = result.tenantId;
+    delete  result.userId
+    delete  result.tenantId
+    
+    // Create user-tenant mapping in the central database
+    if (userId && tenantId) {
+      await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+    }
+    
+    return result;
+
   }
 
-  async completeMfaSetup(session: string, totpCode: string, email: string) {
-    return this.cognitoService.completeMfaSetup(session, totpCode, email);
-  }
+  // async completeMfaSetup(session: string, totpCode: string, email: string) {
+  //   return this.cognitoService.completeMfaSetup(session, totpCode, email);
+  // }
 
   async verifyMFA(session: string, totpCode: string, email: string) {
     return this.cognitoService.verifyMFA(session, totpCode, email);

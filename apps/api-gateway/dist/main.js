@@ -50,6 +50,7 @@ const app_controller_1 = __webpack_require__(/*! ./app.controller */ "./apps/api
 const user_module_1 = __webpack_require__(/*! ./modules/user/user.module */ "./apps/api-gateway/src/modules/user/user.module.ts");
 const tenant_module_1 = __webpack_require__(/*! ./modules/tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
 const tenant_entity_1 = __webpack_require__(/*! ./modules/tenant/tenant.entity */ "./apps/api-gateway/src/modules/tenant/tenant.entity.ts");
+const user_tenant_map_entity_1 = __webpack_require__(/*! ./modules/user-tenant-map/user-tenant-map.entity */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.entity.ts");
 const path_1 = __webpack_require__(/*! path */ "path");
 const throttler_1 = __webpack_require__(/*! @nestjs/throttler */ "@nestjs/throttler");
 const core_1 = __webpack_require__(/*! @nestjs/core */ "@nestjs/core");
@@ -58,6 +59,7 @@ const rbac_module_1 = __webpack_require__(/*! ./modules/rbac/rbac.module */ "./a
 const utils_module_1 = __webpack_require__(/*! ./modules/utils/utils.module */ "./apps/api-gateway/src/modules/utils/utils.module.ts");
 const ioredis_1 = __webpack_require__(/*! @nestjs-modules/ioredis */ "@nestjs-modules/ioredis");
 const cognito_module_1 = __webpack_require__(/*! ./modules/cognito/cognito.module */ "./apps/api-gateway/src/modules/cognito/cognito.module.ts");
+const user_tenant_map_module_1 = __webpack_require__(/*! ./modules/user-tenant-map/user-tenant-map.module */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.module.ts");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -82,7 +84,7 @@ exports.AppModule = AppModule = __decorate([
                 username: process.env.PG_USER || 'postgres',
                 password: process.env.PG_PASSWORD || '1234',
                 database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
-                entities: [tenant_entity_1.Tenant],
+                entities: [tenant_entity_1.Tenant, user_tenant_map_entity_1.UserTenantMap],
                 synchronize: true,
             }),
             ioredis_1.RedisModule.forRootAsync({
@@ -98,7 +100,8 @@ exports.AppModule = AppModule = __decorate([
             rbac_module_1.RbacModule,
             user_module_1.UserModule,
             tenant_module_1.TenantModule,
-            cognito_module_1.CognitoModule
+            cognito_module_1.CognitoModule,
+            user_tenant_map_module_1.UserTenantMapModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [
@@ -418,7 +421,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h;
+var _a, _b, _c, _d, _e, _f, _g;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -429,16 +432,13 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     async signUp(signUpDto) {
-        return this.authService.signUp(signUpDto.email, signUpDto.password, signUpDto.name);
+        return this.authService.signUp(signUpDto.email, signUpDto.password, signUpDto.name, signUpDto.tenantId, signUpDto.role);
     }
     async signIn(signInDto) {
         return this.authService.signIn(signInDto.email, signInDto.password);
     }
     async verifyMFASetup(verifyMFASetupDto) {
         return this.authService.verifyMFASetup(verifyMFASetupDto.session, verifyMFASetupDto.totpCode, verifyMFASetupDto.email);
-    }
-    async completeMFASetup(verifyMFADto) {
-        return this.authService.completeMfaSetup(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
     }
     async verifyMFA(verifyMFADto) {
         return this.authService.verifyMFA(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
@@ -475,19 +475,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyMFASetup", null);
 __decorate([
-    (0, common_1.Post)('complete-mfa-setup'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_e = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _e : Object]),
-    __metadata("design:returntype", Promise)
-], AuthController.prototype, "completeMFASetup", null);
-__decorate([
     (0, common_1.Post)('verify-mfa'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_f = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _f : Object]),
+    __metadata("design:paramtypes", [typeof (_e = typeof auth_dto_1.VerifyMFADto !== "undefined" && auth_dto_1.VerifyMFADto) === "function" ? _e : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyMFA", null);
 __decorate([
@@ -495,14 +487,14 @@ __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_g = typeof auth_dto_1.GlobalSignOutDto !== "undefined" && auth_dto_1.GlobalSignOutDto) === "function" ? _g : Object]),
+    __metadata("design:paramtypes", [typeof (_f = typeof auth_dto_1.GlobalSignOutDto !== "undefined" && auth_dto_1.GlobalSignOutDto) === "function" ? _f : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "globalSignOut", null);
 __decorate([
     (0, common_1.Post)('refresh-token'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_h = typeof auth_dto_1.RefreshTokenDto !== "undefined" && auth_dto_1.RefreshTokenDto) === "function" ? _h : Object]),
+    __metadata("design:paramtypes", [typeof (_g = typeof auth_dto_1.RefreshTokenDto !== "undefined" && auth_dto_1.RefreshTokenDto) === "function" ? _g : Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refreshToken", null);
 exports.AuthController = AuthController = __decorate([
@@ -533,12 +525,13 @@ const auth_controller_1 = __webpack_require__(/*! ./auth.controller */ "./apps/a
 const auth_service_1 = __webpack_require__(/*! ./auth.service */ "./apps/api-gateway/src/modules/auth/auth.service.ts");
 const cognito_service_1 = __webpack_require__(/*! ../cognito/cognito.service */ "./apps/api-gateway/src/modules/cognito/cognito.service.ts");
 const rbac_module_1 = __webpack_require__(/*! ../rbac/rbac.module */ "./apps/api-gateway/src/modules/rbac/rbac.module.ts");
+const user_tenant_map_module_1 = __webpack_require__(/*! ../user-tenant-map/user-tenant-map.module */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.module.ts");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
-        imports: [rbac_module_1.RbacModule],
+        imports: [rbac_module_1.RbacModule, user_tenant_map_module_1.UserTenantMapModule],
         controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService, cognito_service_1.CognitoService],
     })
@@ -563,28 +556,35 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const cognito_service_1 = __webpack_require__(/*! ../cognito/cognito.service */ "./apps/api-gateway/src/modules/cognito/cognito.service.ts");
 const rbac_service_1 = __webpack_require__(/*! ./../rbac/rbac.service */ "./apps/api-gateway/src/modules/rbac/rbac.service.ts");
+const user_tenant_map_service_1 = __webpack_require__(/*! ../user-tenant-map/user-tenant-map.service */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts");
 let AuthService = class AuthService {
-    constructor(cognitoService, rbacService) {
+    constructor(cognitoService, rbacService, userTenantMapService) {
         this.cognitoService = cognitoService;
         this.rbacService = rbacService;
+        this.userTenantMapService = userTenantMapService;
     }
-    async signUp(email, password, name) {
-        return this.cognitoService.signUp(email, password, name);
+    async signUp(email, password, name, tenantId, role) {
+        return this.cognitoService.signUp(email, password, name, tenantId);
     }
     async signIn(email, password) {
         return this.cognitoService.signIn(email, password);
     }
     async verifyMFASetup(session, totpCode, email) {
-        return this.cognitoService.verifyMFASetup(session, totpCode, email);
-    }
-    async completeMfaSetup(session, totpCode, email) {
-        return this.cognitoService.completeMfaSetup(session, totpCode, email);
+        const result = await this.cognitoService.verifyMFASetup(session, totpCode, email);
+        const userId = result.userId;
+        const tenantId = result.tenantId;
+        delete result.userId;
+        delete result.tenantId;
+        if (userId && tenantId) {
+            await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+        }
+        return result;
     }
     async verifyMFA(session, totpCode, email) {
         return this.cognitoService.verifyMFA(session, totpCode, email);
@@ -616,7 +616,7 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _a : Object, typeof (_b = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _b : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _a : Object, typeof (_b = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _b : Object, typeof (_c = typeof user_tenant_map_service_1.UserTenantMapService !== "undefined" && user_tenant_map_service_1.UserTenantMapService) === "function" ? _c : Object])
 ], AuthService);
 
 
@@ -665,6 +665,20 @@ __decorate([
     (0, class_validator_1.MaxLength)(50, { message: 'Name must not exceed 50 characters' }),
     __metadata("design:type", String)
 ], SignUpDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'tenantId must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'tenantId is required' }),
+    (0, class_validator_1.MinLength)(2, { message: 'tenantId must be at least 2 characters long' }),
+    (0, class_validator_1.MaxLength)(50, { message: 'tenantId must not exceed 50 characters' }),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'role must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'role is required' }),
+    (0, class_validator_1.MinLength)(2, { message: 'role must be at least 2 characters long' }),
+    (0, class_validator_1.MaxLength)(50, { message: 'role must not exceed 50 characters' }),
+    __metadata("design:type", String)
+], SignUpDto.prototype, "role", void 0);
 class ConfirmSignUpDto {
 }
 exports.ConfirmSignUpDto = ConfirmSignUpDto;
@@ -1267,7 +1281,7 @@ let CognitoService = class CognitoService {
             .update(username + this.clientId)
             .digest('base64');
     }
-    async signUp(email, password, name) {
+    async signUp(email, password, name, tenantId) {
         const params = {
             ClientId: this.clientId,
             Username: email,
@@ -1282,6 +1296,10 @@ let CognitoService = class CognitoService {
                     Name: 'name',
                     Value: name,
                 },
+                {
+                    Name: 'custom:tenantId',
+                    Value: tenantId
+                }
             ],
         };
         try {
@@ -1416,7 +1434,16 @@ let CognitoService = class CognitoService {
                     console.error('Failed to set MFA preferences:', mfaError);
                 }
             }
+            const adminGetUserCommand = new client_cognito_identity_provider_1.AdminGetUserCommand({
+                UserPoolId: this.userPoolId,
+                Username: email,
+            });
+            const userResult = await this.cognitoClient.send(adminGetUserCommand);
+            const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
+            const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
             return {
+                userId,
+                tenantId,
                 accessToken: result.AuthenticationResult?.AccessToken,
                 refreshToken: result.AuthenticationResult?.RefreshToken,
                 idToken: result.AuthenticationResult?.IdToken,
@@ -2077,6 +2104,303 @@ exports.TenantService = TenantService = TenantService_1 = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(tenant_entity_1.Tenant, 'central_db')),
     __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object])
 ], TenantService);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.controller.ts":
+/*!************************************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.controller.ts ***!
+  \************************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e, _f, _g;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserTenantMapController = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const user_tenant_map_service_1 = __webpack_require__(/*! ./user-tenant-map.service */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts");
+const user_tenant_map_dto_1 = __webpack_require__(/*! ./user-tenant-map.dto */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.dto.ts");
+let UserTenantMapController = class UserTenantMapController {
+    constructor(userTenantMapService) {
+        this.userTenantMapService = userTenantMapService;
+    }
+    async createMapping(mappingData) {
+        return await this.userTenantMapService.createUserTenantMapping(mappingData.tenantId, mappingData.userId);
+    }
+    async getMapping(tenantId, userId) {
+        return await this.userTenantMapService.getUserTenantMapping(tenantId, userId);
+    }
+    async getMappingsByTenant(tenantId) {
+        return await this.userTenantMapService.getMappingsByTenantId(tenantId);
+    }
+    async getMappingsByUser(userId) {
+        return await this.userTenantMapService.getMappingsByUserId(userId);
+    }
+    async deactivateMapping(tenantId, userId) {
+        await this.userTenantMapService.deactivateUserTenantMapping(tenantId, userId);
+        return { message: 'Mapping deactivated successfully' };
+    }
+};
+exports.UserTenantMapController = UserTenantMapController;
+__decorate([
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof user_tenant_map_dto_1.CreateUserTenantMappingDto !== "undefined" && user_tenant_map_dto_1.CreateUserTenantMappingDto) === "function" ? _b : Object]),
+    __metadata("design:returntype", typeof (_c = typeof Promise !== "undefined" && Promise) === "function" ? _c : Object)
+], UserTenantMapController.prototype, "createMapping", null);
+__decorate([
+    (0, common_1.Get)(':tenantId/:userId'),
+    __param(0, (0, common_1.Param)('tenantId')),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", typeof (_d = typeof Promise !== "undefined" && Promise) === "function" ? _d : Object)
+], UserTenantMapController.prototype, "getMapping", null);
+__decorate([
+    (0, common_1.Get)('tenant/:tenantId'),
+    __param(0, (0, common_1.Param)('tenantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_e = typeof Promise !== "undefined" && Promise) === "function" ? _e : Object)
+], UserTenantMapController.prototype, "getMappingsByTenant", null);
+__decorate([
+    (0, common_1.Get)('user/:userId'),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", typeof (_f = typeof Promise !== "undefined" && Promise) === "function" ? _f : Object)
+], UserTenantMapController.prototype, "getMappingsByUser", null);
+__decorate([
+    (0, common_1.Delete)(':tenantId/:userId'),
+    __param(0, (0, common_1.Param)('tenantId')),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", typeof (_g = typeof Promise !== "undefined" && Promise) === "function" ? _g : Object)
+], UserTenantMapController.prototype, "deactivateMapping", null);
+exports.UserTenantMapController = UserTenantMapController = __decorate([
+    (0, common_1.Controller)('user-tenant-mappings'),
+    __metadata("design:paramtypes", [typeof (_a = typeof user_tenant_map_service_1.UserTenantMapService !== "undefined" && user_tenant_map_service_1.UserTenantMapService) === "function" ? _a : Object])
+], UserTenantMapController);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.dto.ts":
+/*!*****************************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.dto.ts ***!
+  \*****************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserTenantMappingResponseDto = exports.CreateUserTenantMappingDto = void 0;
+const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
+class CreateUserTenantMappingDto {
+}
+exports.CreateUserTenantMappingDto = CreateUserTenantMappingDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateUserTenantMappingDto.prototype, "tenantId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateUserTenantMappingDto.prototype, "userId", void 0);
+class UserTenantMappingResponseDto {
+}
+exports.UserTenantMappingResponseDto = UserTenantMappingResponseDto;
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.entity.ts":
+/*!********************************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.entity.ts ***!
+  \********************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserTenantMap = void 0;
+const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
+let UserTenantMap = class UserTenantMap {
+};
+exports.UserTenantMap = UserTenantMap;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
+    __metadata("design:type", String)
+], UserTenantMap.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
+    __metadata("design:type", String)
+], UserTenantMap.prototype, "tenantId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'user_id' }),
+    __metadata("design:type", String)
+], UserTenantMap.prototype, "userId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], UserTenantMap.prototype, "active", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
+], UserTenantMap.prototype, "createdAt", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
+], UserTenantMap.prototype, "updatedAt", void 0);
+exports.UserTenantMap = UserTenantMap = __decorate([
+    (0, typeorm_1.Entity)('user_tenant_mappings')
+], UserTenantMap);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.module.ts":
+/*!********************************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.module.ts ***!
+  \********************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserTenantMapModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
+const user_tenant_map_service_1 = __webpack_require__(/*! ./user-tenant-map.service */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts");
+const user_tenant_map_controller_1 = __webpack_require__(/*! ./user-tenant-map.controller */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.controller.ts");
+const user_tenant_map_entity_1 = __webpack_require__(/*! ./user-tenant-map.entity */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.entity.ts");
+let UserTenantMapModule = class UserTenantMapModule {
+};
+exports.UserTenantMapModule = UserTenantMapModule;
+exports.UserTenantMapModule = UserTenantMapModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([user_tenant_map_entity_1.UserTenantMap], 'central_db'),
+        ],
+        controllers: [user_tenant_map_controller_1.UserTenantMapController],
+        providers: [user_tenant_map_service_1.UserTenantMapService],
+        exports: [user_tenant_map_service_1.UserTenantMapService],
+    })
+], UserTenantMapModule);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts":
+/*!*********************************************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts ***!
+  \*********************************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserTenantMapService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
+const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
+const user_tenant_map_entity_1 = __webpack_require__(/*! ./user-tenant-map.entity */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.entity.ts");
+let UserTenantMapService = class UserTenantMapService {
+    constructor(userTenantMapRepository) {
+        this.userTenantMapRepository = userTenantMapRepository;
+    }
+    async createUserTenantMapping(tenantId, userId) {
+        const existingMapping = await this.userTenantMapRepository.findOne({
+            where: { tenantId, userId, active: true }
+        });
+        if (existingMapping) {
+            return existingMapping;
+        }
+        const mapping = this.userTenantMapRepository.create({
+            tenantId,
+            userId,
+            active: true
+        });
+        return await this.userTenantMapRepository.save(mapping);
+    }
+    async getUserTenantMapping(tenantId, userId) {
+        return await this.userTenantMapRepository.findOne({
+            where: { tenantId, userId, active: true }
+        });
+    }
+    async deactivateUserTenantMapping(tenantId, userId) {
+        await this.userTenantMapRepository.update({ tenantId, userId }, { active: false });
+    }
+    async getMappingsByTenantId(tenantId) {
+        return await this.userTenantMapRepository.find({
+            where: { tenantId, active: true }
+        });
+    }
+    async getMappingsByUserId(userId) {
+        return await this.userTenantMapRepository.find({
+            where: { userId, active: true }
+        });
+    }
+};
+exports.UserTenantMapService = UserTenantMapService;
+exports.UserTenantMapService = UserTenantMapService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(user_tenant_map_entity_1.UserTenantMap, 'central_db')),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object])
+], UserTenantMapService);
 
 
 /***/ }),

@@ -14,11 +14,17 @@ export class AuthController {
 
   @Post('signup')
   async signUp(@Body() signUpDto: SignUpDto) {
+
+    // todo: validate the invitation link - expired or not
+    // todo : extract email, name, role, tenantId from the invitation link
+
+
     return this.authService.signUp(
       signUpDto.email,
       signUpDto.password,
       signUpDto.name,
-    );
+      signUpDto.tenantId,
+      signUpDto.role);
   }
 
   @Post('signin')
@@ -38,15 +44,15 @@ export class AuthController {
     );
   }
 
-  @Post('complete-mfa-setup')
-  @HttpCode(HttpStatus.OK)
-  async completeMFASetup(@Body() verifyMFADto: VerifyMFADto) {
-    return this.authService.completeMfaSetup(
-      verifyMFADto.session,
-      verifyMFADto.totpCode,
-      verifyMFADto.email,
-    );
-  }
+  // @Post('complete-mfa-setup')
+  // @HttpCode(HttpStatus.OK)
+  // async completeMFASetup(@Body() verifyMFADto: VerifyMFADto) {
+  //   return this.authService.completeMfaSetup(
+  //     verifyMFADto.session,
+  //     verifyMFADto.totpCode,
+  //     verifyMFADto.email,
+  //   );
+  // }
 
   @Post('verify-mfa')
   @HttpCode(HttpStatus.OK)

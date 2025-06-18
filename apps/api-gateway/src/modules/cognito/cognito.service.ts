@@ -18,6 +18,7 @@ import {
   AuthFlowType,
   ChallengeNameType,
   AdminConfirmSignUpCommand,
+  AdminGetUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import {
   UserNotFoundException,
@@ -76,7 +77,7 @@ export class CognitoService {
       .digest('base64');
   }
 
-  async signUp(email: string, password: string, name: string) {
+  async signUp(email: string, password: string, name: string, tenantId: string) {
     const params = {
       ClientId: this.clientId,
       Username: email,
@@ -91,6 +92,10 @@ export class CognitoService {
           Name: 'name',
           Value: name,
         },
+        {
+          Name: 'custom:tenantId',
+          Value: tenantId
+        }
       ],
     };
 
@@ -252,7 +257,21 @@ export class CognitoService {
         }
       }
 
+      // After successful confirmation, get the user's attributes including sub
+      const adminGetUserCommand = new AdminGetUserCommand({
+        UserPoolId: this.userPoolId,
+        Username: email,
+      });
+
+      const userResult = await this.cognitoClient.send(adminGetUserCommand);
+      const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
+      const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
+      // console.log(result)
+      
+
       return {
+        userId,
+        tenantId,
         accessToken: result.AuthenticationResult?.AccessToken,
         refreshToken: result.AuthenticationResult?.RefreshToken,
         idToken: result.AuthenticationResult?.IdToken,

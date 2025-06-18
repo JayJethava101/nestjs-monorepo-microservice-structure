@@ -6,18 +6,16 @@ import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { ThrottlerExceptionFilter } from './filters/throttler-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { TransformInterceptor } from '@libs/interceptors/transform.interceptor';
+import { DataSource } from 'typeorm'; // Import DataSource
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
-  // // Global pipes
-  // app.useGlobalPipes(new ValidationPipe({
-  //   transform: true,
-  //   whitelist: true,
-  //   forbidNonWhitelisted: true,
-  // }));
+  // Get the DataSource instance and initialize it
+  const dataSource = app.get(DataSource); // Get DataSource from the app context
+  await dataSource.initialize(); // Make sure to initialize the connection
 
   // Global filters
   app.useGlobalFilters(
@@ -44,4 +42,5 @@ async function bootstrap() {
   console.log(`API Gateway is running on: http://localhost:${port}`);
   console.log(`Swagger documentation is available at: http://localhost:${port}/api`);
 }
+
 bootstrap();

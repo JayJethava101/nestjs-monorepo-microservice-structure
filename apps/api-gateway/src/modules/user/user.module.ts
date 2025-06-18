@@ -18,7 +18,7 @@ import { TenantService } from '../tenant/tenant.service';
           options: {
             package: configService.get<string>('USER_SERVICE_PKG', 'user'),
             protoPath: join(__dirname, './../../../libs/proto/user.proto'),
-            url: configService.get<string>('USER_SERVICE_URL', 'localhost:5000'),
+            url: configService.get<string>('USER_SERVICE_URL', 'localhost:5001'),
           },
         }),
         inject: [ConfigService],

@@ -13,6 +13,8 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { UtilsModule } from './modules/utils/utils.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { CognitoModule } from './modules/cognito/cognito.module';
+import { InvitationModule } from './modules/invitation/invitation.module';
+import { Invitation } from '@libs/entity/invitation.entity';
 
 @Module({
   imports: [
@@ -35,11 +37,11 @@ import { CognitoModule } from './modules/cognito/cognito.module';
       name: 'central_db',
       type: 'postgres',
       host: process.env.PG_HOST || 'localhost',
-      port: 5432,
+      port: parseInt(process.env.PG_PORT || '5433'),
       username: process.env.PG_USER || 'postgres',
-      password: process.env.PG_PASSWORD || '1234',
+      password: process.env.PG_PASSWORD || 'postgres',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
-      entities: [Tenant],
+      entities: [Tenant, Invitation],
       synchronize: true, // todo: Set to false in production
     }),
 
@@ -58,7 +60,8 @@ import { CognitoModule } from './modules/cognito/cognito.module';
     RbacModule,
     UserModule,
     TenantModule,
-    CognitoModule
+    CognitoModule,
+    InvitationModule
   ],
   controllers: [AppController],
   providers: [
@@ -68,4 +71,14 @@ import { CognitoModule } from './modules/cognito/cognito.module';
     }
   ],
 })
-export class AppModule {} 
+export class AppModule {
+  constructor() {
+    console.log({
+      PG_HOST: process.env.PG_HOST,
+      PG_PORT: process.env.PG_PORT,
+      PG_USER: process.env.PG_USER,
+      PG_PASSWORD: process.env.PG_PASSWORD,
+      PG_MANAGEMENT_DB: process.env.PG_MANAGEMENT_DB,
+    });
+  }
+} 

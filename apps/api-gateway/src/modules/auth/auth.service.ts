@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CognitoService } from '../cognito/cognito.service';
 import { RbacService } from './../rbac/rbac.service';
 import { UserTenantMapService } from '../user-tenant-map/user-tenant-map.service';
+import { UserService } from '../user/user.service';
 import { GlobalSignOutDto, ChangePasswordDto  } from './dto/auth-dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class AuthService {
     private readonly cognitoService: CognitoService,
     private readonly rbacService: RbacService,
     private readonly userTenantMapService: UserTenantMapService,
+    private readonly userService: UserService,
   ) {}
 
   async signUp(email: string, password: string, name: string, tenantId: string, role: string) {
@@ -21,23 +23,65 @@ export class AuthService {
     return this.cognitoService.signIn(email, password);
   }
 
+  /**
+   * Verify MFA setup and complete user onboarding
+   * This method:
+   * 1. Verifies the MFA setup with Cognito
+   * 2. Creates user-tenant mapping in central database
+   * 3. Assigns default role to the user
+   * 4. Creates user record in the user service database
+   * 
+   * @param session - MFA setup session token
+   * @param totpCode - TOTP code from authenticator app
+   * @param email - User's email address
+   * @returns Authentication result with tokens
+   */
   async verifyMFASetup(session: string, totpCode: string, email: string) {
     const result = await this.cognitoService.verifyMFASetup(session, totpCode, email);
     const userId = result.userId;
     const tenantId = result.tenantId;
+    const userName = result.userName;
     delete  result.userId
     delete  result.tenantId
+    delete  result.userName
     
     // Create user-tenant mapping in the central database
     if (userId && tenantId) {
-      await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+      try {
+        await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+        console.log(`✅ User-tenant mapping created for userId: ${userId}, tenantId: ${tenantId}`);
+      } catch (error) {
+        console.error('❌ Failed to create user-tenant mapping:', error);
+        // Don't fail the MFA setup if mapping creation fails
+      }
     }
 
     // Add the user to default user group - "read-only"
-    await this.assignDefaultRole(email)
+    try {
+      await this.assignDefaultRole(email);
+      console.log(`✅ Default role assigned to user: ${email}`);
+    } catch (error) {
+      console.error('❌ Failed to assign default role:', error);
+      // Don't fail the MFA setup if role assignment fails
+    }
+
+    // Add user to the user service database
+    if (userId && tenantId) {
+      try {
+        const userData = {
+          email: email,
+          name: userName || email.split('@')[0] // Use userName from Cognito or fallback to email prefix
+        };
+        
+       const user = await this.userService.create(userData, tenantId);
+        console.log(`✅ User created`, user);
+      } catch (error) {
+        console.error('❌ Failed to create user in user service:', error);
+        // Don't fail the MFA setup if user creation fails
+      }
+    }
 
     return result;
-
   }
 
   // async completeMfaSetup(session: string, totpCode: string, email: string) {

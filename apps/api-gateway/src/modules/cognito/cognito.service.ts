@@ -266,12 +266,14 @@ export class CognitoService {
       const userResult = await this.cognitoClient.send(adminGetUserCommand);
       const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
       const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
+      const userName = userResult.UserAttributes?.find(attr => attr.Name === 'name')?.Value;
       // console.log(result)
       
 
       return {
         userId,
         tenantId,
+        userName,
         accessToken: result.AuthenticationResult?.AccessToken,
         refreshToken: result.AuthenticationResult?.RefreshToken,
         idToken: result.AuthenticationResult?.IdToken,

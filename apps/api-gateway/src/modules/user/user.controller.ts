@@ -1,43 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, OnModuleInit } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
-import { Metadata } from '@grpc/grpc-js';
-import * as createError from 'http-errors';
-import { IUserService } from "@libs/interfaces/user-service.interface"
-import { TenantService } from '../tenant/tenant.service';
-import { CreateUserDto, UpdateUserDto } from "@libs/dto/user.dto"
-import { ConfigService } from '@nestjs/config';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { UserService } from './user.service';
+import { CreateUserDto, UpdateUserDto } from '@libs/dto/user.dto';
+import { UserCountResponseDto, UserSearchResponseDto } from './user.dto';
 
 @ApiTags('users')
 @Controller('users')
-export class UserController implements OnModuleInit {
-  private userService: IUserService;
-
-  constructor(
-    @Inject('USER_PACKAGE') private client: ClientGrpc,
-    private tenantService: TenantService,
-  ) {}
-
-  onModuleInit() {
-    this.userService = this.client.getService<IUserService>('UserService');
-  }
-
-  private async prepareMetadata(tenantId: string): Promise<Metadata> {
-    if (!tenantId) {
-      throw createError(400, 'tenantId is required in header')
-    }
-
-    const tenant = await this.tenantService.findById(tenantId);
-    if (!tenant) {
-      throw createError(404, 'Tenant not found')
-    }
-
-    const metadata = new Metadata();
-    metadata.add('tenant-id', tenantId);
-    metadata.add('db-name', tenant.dbName);
-    return metadata;
-  }
+export class UserController {
+  constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: 'Get users with name counts' })
   @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
@@ -46,9 +16,7 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Get('name-counts')
   async findNameCounts(@Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.listUsersWithNameCount({}, metadata);
-   
+    return this.userService.findNameCounts(tenantId);
   }
 
   @ApiOperation({ summary: 'Create a new user' })
@@ -58,8 +26,7 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Post()
   async create(@Body() createUserDto: CreateUserDto, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.createUser(createUserDto, metadata);
+    return this.userService.create(createUserDto, tenantId);
   }
 
   @ApiOperation({ summary: 'Get all users' })
@@ -69,8 +36,7 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Get()
   async findAll(@Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.listUsers({}, metadata);
+    return this.userService.findAll(tenantId);
   }
 
   @ApiOperation({ summary: 'Get a user by id' })
@@ -80,8 +46,7 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Get(':id')
   async findOne(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.getUser({ id }, metadata);
+    return this.userService.findOne(id, tenantId);
   }
 
   @ApiOperation({ summary: 'Update a user' })
@@ -91,11 +56,7 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.updateUser({
-      id,
-      ...updateUserDto
-    }, metadata);
+    return this.userService.update(id, updateUserDto, tenantId);
   }
 
   @ApiOperation({ summary: 'Delete a user' })
@@ -105,9 +66,27 @@ export class UserController implements OnModuleInit {
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Delete(':id')
   async remove(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
-    const metadata = await this.prepareMetadata(tenantId);
-    return this.userService.deleteUser({ id }, metadata);
+    return this.userService.remove(id, tenantId);
   }
 
- 
+  @ApiOperation({ summary: 'Get users by email' })
+  @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
+  @ApiResponse({ status: 200, description: 'Return users with matching email.', type: UserSearchResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiResponse({ status: 404, description: 'Tenant not found.' })
+  @Get('search/email/:email')
+  async findUsersByEmail(@Param('email') email: string, @Headers('x-tenant-id') tenantId: string) {
+    return this.userService.findUsersByEmail(email, tenantId);
+  }
+
+  @ApiOperation({ summary: 'Get user count' })
+  @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
+  @ApiResponse({ status: 200, description: 'Return total user count.', type: UserCountResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @ApiResponse({ status: 404, description: 'Tenant not found.' })
+  @Get('count/total')
+  async getUserCount(@Headers('x-tenant-id') tenantId: string) {
+    const count = await this.userService.getUserCount(tenantId);
+    return { count };
+  }
 } 

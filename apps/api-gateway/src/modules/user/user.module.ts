@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { UserController } from './user.controller';
+import { UserService } from './user.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TenantModule } from '../tenant/tenant.module';
 import { TenantService } from '../tenant/tenant.service';
@@ -27,5 +28,7 @@ import { TenantService } from '../tenant/tenant.service';
     TenantModule
   ],
   controllers: [UserController],
+  providers: [UserService],
+  exports: [UserService],
 })
 export class UserModule {}

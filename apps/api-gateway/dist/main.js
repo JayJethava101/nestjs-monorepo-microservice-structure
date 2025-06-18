@@ -539,12 +539,13 @@ const auth_service_1 = __webpack_require__(/*! ./auth.service */ "./apps/api-gat
 const cognito_service_1 = __webpack_require__(/*! ../cognito/cognito.service */ "./apps/api-gateway/src/modules/cognito/cognito.service.ts");
 const rbac_module_1 = __webpack_require__(/*! ../rbac/rbac.module */ "./apps/api-gateway/src/modules/rbac/rbac.module.ts");
 const user_tenant_map_module_1 = __webpack_require__(/*! ../user-tenant-map/user-tenant-map.module */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.module.ts");
+const user_module_1 = __webpack_require__(/*! ../user/user.module */ "./apps/api-gateway/src/modules/user/user.module.ts");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
-        imports: [rbac_module_1.RbacModule, user_tenant_map_module_1.UserTenantMapModule],
+        imports: [rbac_module_1.RbacModule, user_tenant_map_module_1.UserTenantMapModule, user_module_1.UserModule],
         controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService, cognito_service_1.CognitoService],
     })
@@ -569,18 +570,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b, _c;
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const cognito_service_1 = __webpack_require__(/*! ../cognito/cognito.service */ "./apps/api-gateway/src/modules/cognito/cognito.service.ts");
 const rbac_service_1 = __webpack_require__(/*! ./../rbac/rbac.service */ "./apps/api-gateway/src/modules/rbac/rbac.service.ts");
 const user_tenant_map_service_1 = __webpack_require__(/*! ../user-tenant-map/user-tenant-map.service */ "./apps/api-gateway/src/modules/user-tenant-map/user-tenant-map.service.ts");
+const user_service_1 = __webpack_require__(/*! ../user/user.service */ "./apps/api-gateway/src/modules/user/user.service.ts");
 let AuthService = class AuthService {
-    constructor(cognitoService, rbacService, userTenantMapService) {
+    constructor(cognitoService, rbacService, userTenantMapService, userService) {
         this.cognitoService = cognitoService;
         this.rbacService = rbacService;
         this.userTenantMapService = userTenantMapService;
+        this.userService = userService;
     }
     async signUp(email, password, name, tenantId, role) {
         return this.cognitoService.signUp(email, password, name, tenantId);
@@ -592,12 +595,39 @@ let AuthService = class AuthService {
         const result = await this.cognitoService.verifyMFASetup(session, totpCode, email);
         const userId = result.userId;
         const tenantId = result.tenantId;
+        const userName = result.userName;
         delete result.userId;
         delete result.tenantId;
+        delete result.userName;
         if (userId && tenantId) {
-            await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+            try {
+                await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
+                console.log(`✅ User-tenant mapping created for userId: ${userId}, tenantId: ${tenantId}`);
+            }
+            catch (error) {
+                console.error('❌ Failed to create user-tenant mapping:', error);
+            }
         }
-        await this.assignDefaultRole(email);
+        try {
+            await this.assignDefaultRole(email);
+            console.log(`✅ Default role assigned to user: ${email}`);
+        }
+        catch (error) {
+            console.error('❌ Failed to assign default role:', error);
+        }
+        if (userId && tenantId) {
+            try {
+                const userData = {
+                    email: email,
+                    name: userName || email.split('@')[0]
+                };
+                const user = await this.userService.create(userData, tenantId);
+                console.log(`✅ User created`, user);
+            }
+            catch (error) {
+                console.error('❌ Failed to create user in user service:', error);
+            }
+        }
         return result;
     }
     async verifyMFA(session, totpCode, email) {
@@ -630,7 +660,7 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _a : Object, typeof (_b = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _b : Object, typeof (_c = typeof user_tenant_map_service_1.UserTenantMapService !== "undefined" && user_tenant_map_service_1.UserTenantMapService) === "function" ? _c : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _a : Object, typeof (_b = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _b : Object, typeof (_c = typeof user_tenant_map_service_1.UserTenantMapService !== "undefined" && user_tenant_map_service_1.UserTenantMapService) === "function" ? _c : Object, typeof (_d = typeof user_service_1.UserService !== "undefined" && user_service_1.UserService) === "function" ? _d : Object])
 ], AuthService);
 
 
@@ -1455,9 +1485,11 @@ let CognitoService = class CognitoService {
             const userResult = await this.cognitoClient.send(adminGetUserCommand);
             const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
             const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
+            const userName = userResult.UserAttributes?.find(attr => attr.Name === 'name')?.Value;
             return {
                 userId,
                 tenantId,
+                userName,
                 accessToken: result.AuthenticationResult?.AccessToken,
                 refreshToken: result.AuthenticationResult?.RefreshToken,
                 idToken: result.AuthenticationResult?.IdToken,
@@ -2438,18 +2470,287 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/api-gateway/src/modules/user/user.service.ts");
+const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
+const user_dto_2 = __webpack_require__(/*! ./user.dto */ "./apps/api-gateway/src/modules/user/user.dto.ts");
+let UserController = class UserController {
+    constructor(userService) {
+        this.userService = userService;
+    }
+    async findNameCounts(tenantId) {
+        return this.userService.findNameCounts(tenantId);
+    }
+    async create(createUserDto, tenantId) {
+        return this.userService.create(createUserDto, tenantId);
+    }
+    async findAll(tenantId) {
+        return this.userService.findAll(tenantId);
+    }
+    async findOne(id, tenantId) {
+        return this.userService.findOne(id, tenantId);
+    }
+    async update(id, updateUserDto, tenantId) {
+        return this.userService.update(id, updateUserDto, tenantId);
+    }
+    async remove(id, tenantId) {
+        return this.userService.remove(id, tenantId);
+    }
+    async findUsersByEmail(email, tenantId) {
+        return this.userService.findUsersByEmail(email, tenantId);
+    }
+    async getUserCount(tenantId) {
+        const count = await this.userService.getUserCount(tenantId);
+        return { count };
+    }
+};
+exports.UserController = UserController;
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get users with name counts' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return users with name counts.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
+    (0, common_1.Get)('name-counts'),
+    __param(0, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "findNameCounts", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new user' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'User successfully created.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _b : Object, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "create", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get all users' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all users.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "findAll", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get a user by id' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the user.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "findOne", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Update a user' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'User successfully updated.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
+    (0, common_1.Patch)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, typeof (_c = typeof user_dto_1.UpdateUserDto !== "undefined" && user_dto_1.UpdateUserDto) === "function" ? _c : Object, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "update", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a user' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'User successfully deleted.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "remove", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get users by email' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return users with matching email.', type: user_dto_2.UserSearchResponseDto }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
+    (0, common_1.Get)('search/email/:email'),
+    __param(0, (0, common_1.Param)('email')),
+    __param(1, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "findUsersByEmail", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get user count' }),
+    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return total user count.', type: user_dto_2.UserCountResponseDto }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
+    (0, common_1.Get)('count/total'),
+    __param(0, (0, common_1.Headers)('x-tenant-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUserCount", null);
+exports.UserController = UserController = __decorate([
+    (0, swagger_1.ApiTags)('users'),
+    (0, common_1.Controller)('users'),
+    __metadata("design:paramtypes", [typeof (_a = typeof user_service_1.UserService !== "undefined" && user_service_1.UserService) === "function" ? _a : Object])
+], UserController);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user/user.dto.ts":
+/*!*******************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user/user.dto.ts ***!
+  \*******************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserNameCountResponseDto = exports.UserSearchResponseDto = exports.UserCountResponseDto = void 0;
+const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+class UserCountResponseDto {
+}
+exports.UserCountResponseDto = UserCountResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Total number of users' }),
+    __metadata("design:type", Number)
+], UserCountResponseDto.prototype, "count", void 0);
+class UserSearchResponseDto {
+}
+exports.UserSearchResponseDto = UserSearchResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Array of users matching the search criteria' }),
+    __metadata("design:type", Array)
+], UserSearchResponseDto.prototype, "users", void 0);
+class UserNameCountResponseDto {
+}
+exports.UserNameCountResponseDto = UserNameCountResponseDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'User name' }),
+    __metadata("design:type", String)
+], UserNameCountResponseDto.prototype, "name", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Count of users with this name' }),
+    __metadata("design:type", Number)
+], UserNameCountResponseDto.prototype, "count", void 0);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user/user.module.ts":
+/*!**********************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user/user.module.ts ***!
+  \**********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
+const path_1 = __webpack_require__(/*! path */ "path");
+const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/api-gateway/src/modules/user/user.controller.ts");
+const user_service_1 = __webpack_require__(/*! ./user.service */ "./apps/api-gateway/src/modules/user/user.service.ts");
+const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
+const tenant_module_1 = __webpack_require__(/*! ../tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
+let UserModule = class UserModule {
+};
+exports.UserModule = UserModule;
+exports.UserModule = UserModule = __decorate([
+    (0, common_1.Module)({
+        imports: [
+            config_1.ConfigModule,
+            microservices_1.ClientsModule.registerAsync([
+                {
+                    name: 'USER_PACKAGE',
+                    imports: [config_1.ConfigModule],
+                    useFactory: (configService) => ({
+                        transport: microservices_1.Transport.GRPC,
+                        options: {
+                            package: configService.get('USER_SERVICE_PKG', 'user'),
+                            protoPath: (0, path_1.join)(__dirname, './../../../libs/proto/user.proto'),
+                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
+                        },
+                    }),
+                    inject: [config_1.ConfigService],
+                },
+            ]),
+            tenant_module_1.TenantModule
+        ],
+        controllers: [user_controller_1.UserController],
+        providers: [user_service_1.UserService],
+        exports: [user_service_1.UserService],
+    })
+], UserModule);
+
+
+/***/ }),
+
+/***/ "./apps/api-gateway/src/modules/user/user.service.ts":
+/*!***********************************************************!*\
+  !*** ./apps/api-gateway/src/modules/user/user.service.ts ***!
+  \***********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UserService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 const grpc_js_1 = __webpack_require__(/*! @grpc/grpc-js */ "@grpc/grpc-js");
 const createError = __webpack_require__(/*! http-errors */ "http-errors");
 const tenant_service_1 = __webpack_require__(/*! ../tenant/tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-const user_dto_1 = __webpack_require__(/*! @libs/dto/user.dto */ "./libs/dto/user.dto.ts");
-const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
-let UserController = class UserController {
+let UserService = class UserService {
     constructor(client, tenantService) {
         this.client = client;
         this.tenantService = tenantService;
@@ -2497,143 +2798,28 @@ let UserController = class UserController {
         const metadata = await this.prepareMetadata(tenantId);
         return this.userService.deleteUser({ id }, metadata);
     }
+    async findUsersByEmail(email, tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        const allUsers = await this.userService.listUsers({}, metadata);
+        return allUsers.users?.filter(user => user.email === email) || [];
+    }
+    async findActiveUsers(tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        const allUsers = await this.userService.listUsers({}, metadata);
+        return allUsers.users || [];
+    }
+    async getUserCount(tenantId) {
+        const metadata = await this.prepareMetadata(tenantId);
+        const allUsers = await this.userService.listUsers({}, metadata);
+        return allUsers.users?.length || 0;
+    }
 };
-exports.UserController = UserController;
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Get users with name counts' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return users with name counts.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
-    (0, common_1.Get)('name-counts'),
-    __param(0, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "findNameCounts", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Create a new user' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'User successfully created.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_c = typeof user_dto_1.CreateUserDto !== "undefined" && user_dto_1.CreateUserDto) === "function" ? _c : Object, String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "create", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Get all users' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all users.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
-    (0, common_1.Get)(),
-    __param(0, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "findAll", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Get a user by id' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the user.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "findOne", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Update a user' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'User successfully updated.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, typeof (_d = typeof user_dto_1.UpdateUserDto !== "undefined" && user_dto_1.UpdateUserDto) === "function" ? _d : Object, String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "update", null);
-__decorate([
-    (0, swagger_1.ApiOperation)({ summary: 'Delete a user' }),
-    (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'User successfully deleted.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User or tenant not found.' }),
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Headers)('x-tenant-id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "remove", null);
-exports.UserController = UserController = __decorate([
-    (0, swagger_1.ApiTags)('users'),
-    (0, common_1.Controller)('users'),
-    __param(0, (0, common_2.Inject)('USER_PACKAGE')),
+exports.UserService = UserService;
+exports.UserService = UserService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, common_1.Inject)('USER_PACKAGE')),
     __metadata("design:paramtypes", [typeof (_a = typeof microservices_1.ClientGrpc !== "undefined" && microservices_1.ClientGrpc) === "function" ? _a : Object, typeof (_b = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _b : Object])
-], UserController);
-
-
-/***/ }),
-
-/***/ "./apps/api-gateway/src/modules/user/user.module.ts":
-/*!**********************************************************!*\
-  !*** ./apps/api-gateway/src/modules/user/user.module.ts ***!
-  \**********************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UserModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
-const path_1 = __webpack_require__(/*! path */ "path");
-const user_controller_1 = __webpack_require__(/*! ./user.controller */ "./apps/api-gateway/src/modules/user/user.controller.ts");
-const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const tenant_module_1 = __webpack_require__(/*! ../tenant/tenant.module */ "./apps/api-gateway/src/modules/tenant/tenant.module.ts");
-let UserModule = class UserModule {
-};
-exports.UserModule = UserModule;
-exports.UserModule = UserModule = __decorate([
-    (0, common_1.Module)({
-        imports: [
-            config_1.ConfigModule,
-            microservices_1.ClientsModule.registerAsync([
-                {
-                    name: 'USER_PACKAGE',
-                    imports: [config_1.ConfigModule],
-                    useFactory: (configService) => ({
-                        transport: microservices_1.Transport.GRPC,
-                        options: {
-                            package: configService.get('USER_SERVICE_PKG', 'user'),
-                            protoPath: (0, path_1.join)(__dirname, './../../../libs/proto/user.proto'),
-                            url: configService.get('USER_SERVICE_URL', 'localhost:5000'),
-                        },
-                    }),
-                    inject: [config_1.ConfigService],
-                },
-            ]),
-            tenant_module_1.TenantModule
-        ],
-        controllers: [user_controller_1.UserController],
-    })
-], UserModule);
+], UserService);
 
 
 /***/ }),

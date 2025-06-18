@@ -20,6 +20,7 @@ export class UserController {
   @GrpcMethod('UserService', 'CreateUser')
   async create(createUserDto: CreateUserDto, metadata: Record<string, any>): Promise<any> {
     const { tenantId, dbName } = this.getTenantInfo(metadata);
+    console.log(CreateUserDto, metadata)
     return this.userService.create(createUserDto, { tenantId, dbName });
   }
 

@@ -24,6 +24,7 @@ export class UserService {
       const user = userRepository.create(createUserDto);
       const savedUser = await userRepository.save(user);
       return savedUser;
+      console.log(savedUser)
     } catch (error) {
       throw new ResourceInternalException('Failed to create user', this.MODULE_NAME);
     }

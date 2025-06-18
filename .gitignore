@@ -1,36 +1,43 @@
-# compiled output
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
 **/dist/
-/dist
-/apps/*/dist/
-/libs/*/dist/
-/packages/*/dist/
-/node_modules
-/build
+build/
+**/build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+test/coverage/
+**/coverage/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
 
-# OS
-.DS_Store
-
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# Environment variables
+.env
+.env.*
+!.env.example
+*.env.docker
+.env.development
+.env.test
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # IDE - VSCode
 .vscode/*
@@ -38,53 +45,72 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/workspace.code-workspace
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# IDE - JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
 
-# temp directory
-.temp
-.tmp
+# IDE - Others
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.swp
+*.swo
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Docker
-.docker
+.docker/
 docker-compose.override.yml
-*.env.docker
+docker-compose.*.yml
+!docker-compose.yml
+!docker-compose.prod.yml
 
 # Database
 *.sqlite
 *.sqlite3
 *.db
 postgres_data/
+**/postgres_data/
 
-# NestJS specific
-/apps/*/dist
-/libs/*/dist
-/apps/*/node_modules
-/libs/*/node_modules
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# TypeScript
-*.tsbuildinfo
-
-# Cache
-.cache
-.npm
+# Cache and temp files
+.cache/
+.npm/
 .eslintcache
 .stylelintcache
+.temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# Debug
+.debug/
+debug/
+debug.log
 
 # Misc
-.DS_Store
-Thumbs.db
+*.bak
+*.swp
+*.swo
+*~

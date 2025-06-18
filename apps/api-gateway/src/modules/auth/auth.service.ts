@@ -32,7 +32,10 @@ export class AuthService {
     if (userId && tenantId) {
       await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
     }
-    
+
+    // Add the user to default user group - "read-only"
+    await this.assignDefaultRole(email)
+
     return result;
 
   }
@@ -59,8 +62,8 @@ export class AuthService {
   }
 
   async assignDefaultRole(email: string) {
-    // Default role is typically "user"
-    await this.rbacService.assignRoleToUser(email, 'user');
+    // Default role is typically "read-only"
+    await this.rbacService.assignRoleToUser(email, 'read-only');
   }
 
   async globalSignOut(globalSignOutDto: GlobalSignOutDto) {

@@ -1699,7 +1699,6 @@ const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const rbac_module_1 = __webpack_require__(/*! ../rbac/rbac.module */ "./apps/api-gateway/src/modules/rbac/rbac.module.ts");
 const cognito_module_1 = __webpack_require__(/*! ../cognito/cognito.module */ "./apps/api-gateway/src/modules/cognito/cognito.module.ts");
 const utils_module_1 = __webpack_require__(/*! ../utils/utils.module */ "./apps/api-gateway/src/modules/utils/utils.module.ts");
-const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
 let InvitationModule = class InvitationModule {
 };
 exports.InvitationModule = InvitationModule;
@@ -1730,11 +1729,6 @@ exports.InvitationModule = InvitationModule = __decorate([
         controllers: [invitation_controller_1.InvitationController],
         providers: [
             invitation_service_1.InvitationService,
-            {
-                provide: 'InvitationRepository',
-                useFactory: (dataSource) => dataSource.getRepository(invitation_entity_1.Invitation),
-                inject: [typeorm_2.DataSource],
-            },
         ],
         exports: [invitation_service_1.InvitationService],
     })
@@ -1762,7 +1756,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InvitationService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -1772,15 +1766,11 @@ const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const uuid_1 = __webpack_require__(/*! uuid */ "uuid");
 const date_fns_1 = __webpack_require__(/*! date-fns */ "date-fns");
 const invitation_entity_1 = __webpack_require__(/*! @libs/entity/invitation.entity */ "./libs/entity/invitation.entity.ts");
-const rbac_service_1 = __webpack_require__(/*! ../rbac/rbac.service */ "./apps/api-gateway/src/modules/rbac/rbac.service.ts");
-const cognito_service_1 = __webpack_require__(/*! ../cognito/cognito.service */ "./apps/api-gateway/src/modules/cognito/cognito.service.ts");
 const email_service_1 = __webpack_require__(/*! ../utils/email.service */ "./apps/api-gateway/src/modules/utils/email.service.ts");
 let InvitationService = class InvitationService {
-    constructor(invitationRepository, configService, rbacService, cognitoService, emailService) {
+    constructor(invitationRepository, configService, emailService) {
         this.invitationRepository = invitationRepository;
         this.configService = configService;
-        this.rbacService = rbacService;
-        this.cognitoService = cognitoService;
         this.emailService = emailService;
     }
     async createInvitation(createInvitationDto) {
@@ -1833,8 +1823,8 @@ let InvitationService = class InvitationService {
 exports.InvitationService = InvitationService;
 exports.InvitationService = InvitationService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(invitation_entity_1.Invitation)),
-    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object, typeof (_c = typeof rbac_service_1.RbacService !== "undefined" && rbac_service_1.RbacService) === "function" ? _c : Object, typeof (_d = typeof cognito_service_1.CognitoService !== "undefined" && cognito_service_1.CognitoService) === "function" ? _d : Object, typeof (_e = typeof email_service_1.EmailService !== "undefined" && email_service_1.EmailService) === "function" ? _e : Object])
+    __param(0, (0, typeorm_1.InjectRepository)(invitation_entity_1.Invitation, 'central_db')),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof config_1.ConfigService !== "undefined" && config_1.ConfigService) === "function" ? _b : Object, typeof (_c = typeof email_service_1.EmailService !== "undefined" && email_service_1.EmailService) === "function" ? _c : Object])
 ], InvitationService);
 
 
@@ -2607,7 +2597,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EmailService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const nodemailer = __webpack_require__(/*! nodemailer */ "nodemailer");
+const nodemailer = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'nodemailer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
 let EmailService = class EmailService {
     constructor(configService) {
         this.configService = configService;
@@ -3181,16 +3171,6 @@ module.exports = require("jwt-decode");
 
 /***/ }),
 
-/***/ "nodemailer":
-/*!*****************************!*\
-  !*** external "nodemailer" ***!
-  \*****************************/
-/***/ ((module) => {
-
-module.exports = require("nodemailer");
-
-/***/ }),
-
 /***/ "path":
 /*!***********************!*\
   !*** external "path" ***!
@@ -3274,13 +3254,10 @@ const global_exception_filter_1 = __webpack_require__(/*! ./filters/global-excep
 const throttler_exception_filter_1 = __webpack_require__(/*! ./filters/throttler-exception.filter */ "./apps/api-gateway/src/filters/throttler-exception.filter.ts");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 const transform_interceptor_1 = __webpack_require__(/*! @libs/interceptors/transform.interceptor */ "./libs/interceptors/transform.interceptor.ts");
-const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const port = configService.get('PORT', 3000);
-    const dataSource = app.get(typeorm_1.DataSource);
-    await dataSource.initialize();
     app.useGlobalFilters(new global_exception_filter_1.GlobalExceptionFilter(), new throttler_exception_filter_1.ThrottlerExceptionFilter());
     app.useGlobalInterceptors(new transform_interceptor_1.TransformInterceptor());
     const config = new swagger_1.DocumentBuilder()

@@ -10,6 +10,7 @@ import { RbacModule } from '../rbac/rbac.module';
 import { CognitoModule } from '../cognito/cognito.module';
 import { UtilsModule } from '../utils/utils.module';
 import { DataSource } from 'typeorm';
+import { EmailService } from '../utils/email.service';
 
 @Module({
   imports: [
@@ -39,11 +40,11 @@ import { DataSource } from 'typeorm';
   controllers: [InvitationController],
   providers: [
     InvitationService,
-    {
-      provide: 'InvitationRepository',  // Providing the InvitationRepository using the DataSource
-      useFactory: (dataSource: DataSource) => dataSource.getRepository(Invitation),
-      inject: [DataSource],
-    },
+    // {
+    //   provide: 'InvitationRepository',  // Providing the InvitationRepository using the DataSource
+    //   useFactory: (dataSource: DataSource) => dataSource.getRepository(Invitation),
+    //   inject: [DataSource],
+    // },
   ],
   exports: [InvitationService],
 })

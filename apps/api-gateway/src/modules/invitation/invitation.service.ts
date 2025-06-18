@@ -13,11 +13,11 @@ import { EmailService } from '../utils/email.service';
 @Injectable()
 export class InvitationService {
   constructor(
-    @InjectRepository(Invitation)
+    @InjectRepository(Invitation, 'central_db')
     private invitationRepository: Repository<Invitation>,
     private configService: ConfigService,
-    private rbacService: RbacService,
-    private cognitoService: CognitoService,
+    // private rbacService: RbacService,
+    // private cognitoService: CognitoService,
     private emailService: EmailService,
   ) {}
 

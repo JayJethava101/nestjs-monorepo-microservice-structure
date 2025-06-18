@@ -35,7 +35,7 @@ import { CognitoModule } from './modules/cognito/cognito.module';
       name: 'central_db',
       type: 'postgres',
       host: process.env.PG_HOST || 'localhost',
-      port: 5432,
+      port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : 5432,
       username: process.env.PG_USER || 'postgres',
       password: process.env.PG_PASSWORD || '1234',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
@@ -68,4 +68,14 @@ import { CognitoModule } from './modules/cognito/cognito.module';
     }
   ],
 })
-export class AppModule {} 
+export class AppModule {
+  constructor() {
+    console.log({
+      PG_HOST: process.env.PG_HOST,
+      PG_PORT: process.env.PG_PORT,
+      PG_USER: process.env.PG_USER,
+      PG_PASSWORD: process.env.PG_PASSWORD,
+      PG_MANAGEMENT_DB: process.env.PG_MANAGEMENT_DB,
+    });
+  }
+} 

@@ -19,8 +19,8 @@ export class AuthService {
     return this.cognitoService.signIn(email, password);
   }
 
-  async verifyMFASetup(session: string, totpCode: string) {
-    return this.cognitoService.verifyMFASetup(session, totpCode);
+  async verifyMFASetup(session: string, totpCode: string, email: string) {
+    return this.cognitoService.verifyMFASetup(session, totpCode, email);
   }
 
   async completeMfaSetup(session: string, totpCode: string, email: string) {

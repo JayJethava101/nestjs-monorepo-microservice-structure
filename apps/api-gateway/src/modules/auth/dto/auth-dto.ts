@@ -72,6 +72,10 @@ export class VerifyMFASetupDto {
   @IsNotEmpty({ message: 'TOTP code is required' })
   @Matches(/^\d{6}$/, { message: 'TOTP code must be exactly 6 digits' })
   totpCode: string;
+
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
 }
 
 export class GlobalSignOutDto {

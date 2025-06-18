@@ -34,6 +34,7 @@ export class AuthController {
     return this.authService.verifyMFASetup(
       verifyMFASetupDto.session,
       verifyMFASetupDto.totpCode,
+      verifyMFASetupDto.email
     );
   }
 

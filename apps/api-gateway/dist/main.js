@@ -435,7 +435,7 @@ let AuthController = class AuthController {
         return this.authService.signIn(signInDto.email, signInDto.password);
     }
     async verifyMFASetup(verifyMFASetupDto) {
-        return this.authService.verifyMFASetup(verifyMFASetupDto.session, verifyMFASetupDto.totpCode);
+        return this.authService.verifyMFASetup(verifyMFASetupDto.session, verifyMFASetupDto.totpCode, verifyMFASetupDto.email);
     }
     async completeMFASetup(verifyMFADto) {
         return this.authService.completeMfaSetup(verifyMFADto.session, verifyMFADto.totpCode, verifyMFADto.email);
@@ -580,8 +580,8 @@ let AuthService = class AuthService {
     async signIn(email, password) {
         return this.cognitoService.signIn(email, password);
     }
-    async verifyMFASetup(session, totpCode) {
-        return this.cognitoService.verifyMFASetup(session, totpCode);
+    async verifyMFASetup(session, totpCode, email) {
+        return this.cognitoService.verifyMFASetup(session, totpCode, email);
     }
     async completeMfaSetup(session, totpCode, email) {
         return this.cognitoService.completeMfaSetup(session, totpCode, email);
@@ -733,6 +733,11 @@ __decorate([
     (0, class_validator_1.Matches)(/^\d{6}$/, { message: 'TOTP code must be exactly 6 digits' }),
     __metadata("design:type", String)
 ], VerifyMFASetupDto.prototype, "totpCode", void 0);
+__decorate([
+    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    __metadata("design:type", String)
+], VerifyMFASetupDto.prototype, "email", void 0);
 class GlobalSignOutDto {
 }
 exports.GlobalSignOutDto = GlobalSignOutDto;
@@ -1364,7 +1369,7 @@ let CognitoService = class CognitoService {
             this.handleCognitoError(error);
         }
     }
-    async verifyMFASetup(session, totpCode) {
+    async verifyMFASetup(session, totpCode, email) {
         const params = {
             Session: session,
             UserCode: totpCode,
@@ -1372,12 +1377,8 @@ let CognitoService = class CognitoService {
         try {
             const command = new client_cognito_identity_provider_1.VerifySoftwareTokenCommand(params);
             const result = await this.cognitoClient.send(command);
-            if (result.Status === 'SUCCESS') {
-                return {
-                    status: result.Status,
-                    session: result.Session,
-                    message: 'MFA setup completed successfully',
-                };
+            if (result.Status === 'SUCCESS' && result.Session) {
+                return this.completeMfaSetup(result.Session, totpCode, email);
             }
             throw new common_1.BadRequestException('Invalid TOTP code');
         }

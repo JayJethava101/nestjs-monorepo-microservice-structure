@@ -197,7 +197,7 @@ export class CognitoService {
     }
   }
 
-  async verifyMFASetup(session: string, totpCode: string) {
+  async verifyMFASetup(session: string, totpCode: string, email: string) {
     const params = {
       Session: session,
       UserCode: totpCode,
@@ -207,12 +207,8 @@ export class CognitoService {
       const command = new VerifySoftwareTokenCommand(params);
       const result = await this.cognitoClient.send(command);
 
-      if (result.Status === 'SUCCESS') {
-        return {
-          status: result.Status,
-          session: result.Session,
-          message: 'MFA setup completed successfully',
-        };
+      if (result.Status === 'SUCCESS' && result.Session) {
+        return this.completeMfaSetup(result.Session, totpCode, email);
       }
 
       throw new BadRequestException('Invalid TOTP code');

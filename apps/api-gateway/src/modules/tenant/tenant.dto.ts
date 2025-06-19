@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateTenantDto {
   @ApiProperty({
     description: 'The name of the tenant',
-    example: 'Acme Corporation'
+    example: 'Acme Corporation',
   })
   @IsString()
   @IsNotEmpty()

@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -30,7 +34,7 @@ import {
   ExpiredCodeException,
   LimitExceededException,
   TooManyRequestsException,
-  InvalidParameterException
+  InvalidParameterException,
 } from '../auth/exceptions/cognito-exceptions';
 import { TokenRevocationService } from '../utils/token.revocation.service';
 
@@ -41,11 +45,17 @@ export class CognitoService {
   private readonly clientId: string;
   private readonly clientSecret: string;
 
-  constructor(private configService: ConfigService, private tokenRevocationService: TokenRevocationService) {
-    this.userPoolId = this.configService.get<string>('AWS_COGNITO_USER_POOL_ID') || '';
-    this.clientId = this.configService.get<string>('AWS_COGNITO_CLIENT_ID') || '';
-    this.clientSecret = this.configService.get<string>('AWS_COGNITO_CLIENT_SECRET') || '';
-    
+  constructor(
+    private configService: ConfigService,
+    private tokenRevocationService: TokenRevocationService,
+  ) {
+    this.userPoolId =
+      this.configService.get<string>('AWS_COGNITO_USER_POOL_ID') || '';
+    this.clientId =
+      this.configService.get<string>('AWS_COGNITO_CLIENT_ID') || '';
+    this.clientSecret =
+      this.configService.get<string>('AWS_COGNITO_CLIENT_SECRET') || '';
+
     this.cognitoClient = new CognitoIdentityProviderClient({
       region: this.configService.get<string>('AWS_REGION'),
     });
@@ -65,7 +75,7 @@ export class CognitoService {
       throw new TooManyRequestsException();
     }
 
-    console.log('Re-throw the original error', error)
+    console.log('Re-throw the original error', error);
     // If not a known error, re-throw the original
     throw error;
   }
@@ -77,7 +87,12 @@ export class CognitoService {
       .digest('base64');
   }
 
-  async signUp(email: string, password: string, name: string, tenantId: string) {
+  async signUp(
+    email: string,
+    password: string,
+    name: string,
+    tenantId: string,
+  ) {
     const params = {
       ClientId: this.clientId,
       Username: email,
@@ -94,8 +109,8 @@ export class CognitoService {
         },
         {
           Name: 'custom:tenantId',
-          Value: tenantId
-        }
+          Value: tenantId,
+        },
       ],
     };
 
@@ -111,18 +126,23 @@ export class CognitoService {
       });
       await this.cognitoClient.send(confirmCommand);
 
-      
       // Sign in the user after auto-confirmation
       const signInResult = await this.signIn(email, password);
-      
+
       // If MFA setup is required, initiate it
-      if (signInResult.challengeName === ChallengeNameType.MFA_SETUP && signInResult.session) {
-        const mfaSetupResult = await this.initiateMfaSetup(signInResult.session);
+      if (
+        signInResult.challengeName === ChallengeNameType.MFA_SETUP &&
+        signInResult.session
+      ) {
+        const mfaSetupResult = await this.initiateMfaSetup(
+          signInResult.session,
+        );
         return {
           userSub: result.UserSub,
           ...signInResult,
           ...mfaSetupResult,
-          message: 'User registered and confirmed successfully. Please set up MFA.',
+          message:
+            'User registered and confirmed successfully. Please set up MFA.',
         };
       }
 
@@ -189,7 +209,6 @@ export class CognitoService {
       // Generate QR code url for the secret
       const secretCode = result.SecretCode;
       const qrCodeUrl = `otpauth://totp/YourApp:user?secret=${secretCode}&issuer=YourApp`;
-  
 
       return {
         secretCode,
@@ -264,11 +283,16 @@ export class CognitoService {
       });
 
       const userResult = await this.cognitoClient.send(adminGetUserCommand);
-      const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
-      const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
-      const userName = userResult.UserAttributes?.find(attr => attr.Name === 'name')?.Value;
+      const userId = userResult.UserAttributes?.find(
+        (attr) => attr.Name === 'sub',
+      )?.Value;
+      const tenantId = userResult.UserAttributes?.find(
+        (attr) => attr.Name === 'custom:tenantId',
+      )?.Value;
+      const userName = userResult.UserAttributes?.find(
+        (attr) => attr.Name === 'name',
+      )?.Value;
       // console.log(result)
-      
 
       return {
         userId,
@@ -309,15 +333,13 @@ export class CognitoService {
     }
   }
 
-  
-
-   /**
+  /**
    * Initiate forgot password flow
    */
-   async forgotPassword(email: string) {
+  async forgotPassword(email: string) {
     try {
       const secretHash = this.generateSecretHash(email);
-      
+
       const command = new ForgotPasswordCommand({
         ClientId: this.clientId,
         Username: email,
@@ -334,10 +356,14 @@ export class CognitoService {
   /**
    * Confirm new password with confirmation code
    */
-  async confirmForgotPassword(email: string, password: string, confirmationCode: string) {
+  async confirmForgotPassword(
+    email: string,
+    password: string,
+    confirmationCode: string,
+  ) {
     try {
       const secretHash = this.generateSecretHash(email);
-      
+
       const command = new ConfirmForgotPasswordCommand({
         ClientId: this.clientId,
         Username: email,
@@ -356,17 +382,21 @@ export class CognitoService {
   /**
    * Change user password
    */
-  async changePassword(email: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    email: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     try {
       // First authenticate the user with current password
       const authResponse = await this.signIn(email, currentPassword);
-      
+
       if (!authResponse?.accessToken) {
         throw new Error('Authentication failed');
       }
-      
+
       const { accessToken } = authResponse;
-      
+
       // Change password using the access token
       const command = new ChangePasswordCommand({
         AccessToken: accessToken,
@@ -396,7 +426,6 @@ export class CognitoService {
 
       // Add the token to our local revocation list
       await this.tokenRevocationService.revokeToken(accessToken);
-      
 
       return response;
     } catch (error) {
@@ -433,17 +462,14 @@ export class CognitoService {
    */
   async refreshToken(refreshToken: string) {
     try {
-   
       const command = new InitiateAuthCommand({
         AuthFlow: 'REFRESH_TOKEN_AUTH',
         ClientId: this.clientId,
         AuthParameters: {
           REFRESH_TOKEN: refreshToken,
-          SECRET_HASH: this.clientSecret ,
+          SECRET_HASH: this.clientSecret,
         },
       });
-
-
 
       const response = await this.cognitoClient.send(command);
       return response;
@@ -451,6 +477,4 @@ export class CognitoService {
       this.handleCognitoError(error);
     }
   }
-
-  
 }

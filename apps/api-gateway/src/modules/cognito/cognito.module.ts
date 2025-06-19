@@ -6,7 +6,12 @@ import { CognitoSsoController } from './cognito-sso.controller';
 import { TokenRevocationService } from '../utils/token.revocation.service';
 
 @Module({
-  providers: [CognitoService, CognitoRbacService, CognitoSsoService, TokenRevocationService],
+  providers: [
+    CognitoService,
+    CognitoRbacService,
+    CognitoSsoService,
+    TokenRevocationService,
+  ],
   exports: [CognitoService, CognitoRbacService, CognitoSsoService],
   controllers: [CognitoSsoController],
 })

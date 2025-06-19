@@ -10,7 +10,10 @@ export class DatabaseService implements OnModuleDestroy {
 
   constructor(private configService: ConfigService) {}
 
-  async getTenantConnection(tenantId: string, tenantDbName: string): Promise<DataSource> {
+  async getTenantConnection(
+    tenantId: string,
+    tenantDbName: string,
+  ): Promise<DataSource> {
     // Check if connection already exists
     if (this.tenantConnections.has(tenantId)) {
       const connection = this.tenantConnections.get(tenantId);
@@ -38,7 +41,10 @@ export class DatabaseService implements OnModuleDestroy {
       this.logger.log(`Created new database connection for tenant ${tenantId}`);
       return connection;
     } catch (error) {
-      this.logger.error(`Failed to create database connection for tenant ${tenantId}`, error);
+      this.logger.error(
+        `Failed to create database connection for tenant ${tenantId}`,
+        error,
+      );
       throw error;
     }
   }
@@ -53,4 +59,4 @@ export class DatabaseService implements OnModuleDestroy {
     }
     this.tenantConnections.clear();
   }
-} 
+}

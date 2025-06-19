@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const isDocker = process.env.NODE_ENV === 'production';
-  
+
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {
@@ -22,9 +22,12 @@ async function bootstrap() {
 
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
-  const serviceUrl = configService.get<string>('USER_SERVICE_URL', 'localhost:5001');
+  const serviceUrl = configService.get<string>(
+    'USER_SERVICE_URL',
+    'localhost:5001',
+  );
   const port = serviceUrl.split(':')[1] || '5001';
-  const serviceName = configService.get<string>('USER_SERVICE_PKG', 'user')
+  const serviceName = configService.get<string>('USER_SERVICE_PKG', 'user');
 
   // Use custom validation pipe
   app.useGlobalPipes(new DtoValidationPipe());
@@ -35,4 +38,4 @@ async function bootstrap() {
   await app.listen();
   logger.log(`User Service is running on ${serviceUrl}`);
 }
-bootstrap(); 
+bootstrap();

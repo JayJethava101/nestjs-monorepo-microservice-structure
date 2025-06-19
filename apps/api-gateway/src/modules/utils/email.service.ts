@@ -14,8 +14,6 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
-
-
     const isProd = process.env.NODE_ENV === 'production';
 
     this.transporter = nodemailer.createTransport(
@@ -34,7 +32,7 @@ export class EmailService {
             port: process.env.SMTP_PORT,
             secure: false,
             auth: null,
-          }
+          },
     );
   }
 
@@ -57,4 +55,4 @@ export class EmailService {
 
     await this.transporter.sendMail(mailOptions);
   }
-} 
+}

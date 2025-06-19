@@ -5,9 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 
 @Global()
 @Module({
-    imports: [ConfigModule],
-    providers: [TokenRevocationService, EmailService],
-    exports: [TokenRevocationService, EmailService]
+  imports: [ConfigModule],
+  providers: [TokenRevocationService, EmailService],
+  exports: [TokenRevocationService, EmailService],
 })
-export class UtilsModule {
-}
+export class UtilsModule {}

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Headers,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from '@libs/dto/user.dto';
@@ -25,7 +34,10 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Post()
-  async create(@Body() createUserDto: CreateUserDto, @Headers('x-tenant-id') tenantId: string) {
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
     return this.userService.create(createUserDto, tenantId);
   }
 
@@ -45,7 +57,10 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Get(':id')
-  async findOne(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
+  async findOne(
+    @Param('id') id: string,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
     return this.userService.findOne(id, tenantId);
   }
 
@@ -55,7 +70,11 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Headers('x-tenant-id') tenantId: string) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
     return this.userService.update(id, updateUserDto, tenantId);
   }
 
@@ -65,23 +84,37 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'User or tenant not found.' })
   @Delete(':id')
-  async remove(@Param('id') id: string, @Headers('x-tenant-id') tenantId: string) {
+  async remove(
+    @Param('id') id: string,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
     return this.userService.remove(id, tenantId);
   }
 
   @ApiOperation({ summary: 'Get users by email' })
   @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
-  @ApiResponse({ status: 200, description: 'Return users with matching email.', type: UserSearchResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Return users with matching email.',
+    type: UserSearchResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Get('search/email/:email')
-  async findUsersByEmail(@Param('email') email: string, @Headers('x-tenant-id') tenantId: string) {
+  async findUsersByEmail(
+    @Param('email') email: string,
+    @Headers('x-tenant-id') tenantId: string,
+  ) {
     return this.userService.findUsersByEmail(email, tenantId);
   }
 
   @ApiOperation({ summary: 'Get user count' })
   @ApiHeader({ name: 'x-tenant-id', required: true, description: 'Tenant ID' })
-  @ApiResponse({ status: 200, description: 'Return total user count.', type: UserCountResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Return total user count.',
+    type: UserCountResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @Get('count/total')
@@ -89,4 +122,4 @@ export class UserController {
     const count = await this.userService.getUserCount(tenantId);
     return { count };
   }
-} 
+}

@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { ApiErrorResponse } from '@libs/interfaces/response.interface';
 
@@ -12,7 +18,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest();
     const error = exception.getError?.() || exception;
 
-
     const errorResponse: ApiErrorResponse = {
       status: 'error',
       message: 'Internal server error',
@@ -21,8 +26,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
 
     // Check if it's an RPC exception
-    if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      'message' in error
+    ) {
       // Handle validation errors
       if (error.code === 3) {
         const details = JSON.parse(error.details);
@@ -31,7 +40,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           // message: 'Validation failed',
           // errors: details,
           ...details,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          stack:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
       }
 
@@ -42,24 +52,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         return response.status(status).json({
           ...errorResponse,
           ...details,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          stack:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
       } catch {
         return response.status(status).json({
           ...errorResponse,
           message: error.details,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+          stack:
+            process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
       }
     }
 
     // Handle HTTP exceptions
 
-    return response.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({
-      ...errorResponse,
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    return response
+      .status(error.status || HttpStatus.INTERNAL_SERVER_ERROR)
+      .json({
+        ...errorResponse,
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
   }
 
   private getHttpStatus(code: number): number {

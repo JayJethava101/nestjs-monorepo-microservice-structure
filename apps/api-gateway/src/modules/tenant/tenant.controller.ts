@@ -12,13 +12,12 @@ import { JwtGuard } from '../../guards/jwt/jwt.guard';
 export class TenantController {
   constructor(private readonly tenantService: TenantService) {}
 
-
   @ApiOperation({ summary: 'Create a new tenant' })
   @ApiResponse({ status: 201, description: 'Tenant successfully created.' })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @Post()
   create(@Body() createTenantDto: CreateTenantDto): Promise<Tenant> {
-    console.log('Request came to tenanat controller...')
+    console.log('Request came to tenanat controller...');
     return this.tenantService.create(createTenantDto);
   }
 

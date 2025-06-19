@@ -1,11 +1,29 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, ValidationPipe, UsePipes, UseInterceptors } from '@nestjs/common';
-import { SignUpDto, ConfirmSignUpDto, SignInDto, SetupMFADto, VerifyMFASetupDto, VerifyMFADto, GlobalSignOutDto, RefreshTokenDto } from './dto/auth-dto';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  ValidationPipe,
+  UsePipes,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  SignUpDto,
+  ConfirmSignUpDto,
+  SignInDto,
+  SetupMFADto,
+  VerifyMFASetupDto,
+  VerifyMFADto,
+  GlobalSignOutDto,
+  RefreshTokenDto,
+} from './dto/auth-dto';
 import { AuthService } from './auth.service';
 import { TransformInterceptor } from '@libs/interceptors/transform.interceptor';
 
 @Controller('auth')
-// @UsePipes(new ValidationPipe({ 
-//   whitelist: true, 
+// @UsePipes(new ValidationPipe({
+//   whitelist: true,
 //   forbidNonWhitelisted: true,
 //   transform: true,
 //   validateCustomDecorators: true
@@ -15,17 +33,16 @@ export class AuthController {
 
   @Post('signup')
   async signUp(@Body() signUpDto: SignUpDto) {
-
     // todo: validate the invitation link - expired or not
     // todo : extract email, name, role, tenantId from the invitation link
-
 
     return this.authService.signUp(
       signUpDto.email,
       signUpDto.password,
       signUpDto.name,
       signUpDto.tenantId,
-      signUpDto.role);
+      signUpDto.role,
+    );
   }
 
   @Post('signin')
@@ -34,14 +51,13 @@ export class AuthController {
     return this.authService.signIn(signInDto.email, signInDto.password);
   }
 
-
   @Post('verify-mfa-setup')
   @HttpCode(HttpStatus.OK)
   async verifyMFASetup(@Body() verifyMFASetupDto: VerifyMFASetupDto) {
     return this.authService.verifyMFASetup(
       verifyMFASetupDto.session,
       verifyMFASetupDto.totpCode,
-      verifyMFASetupDto.email
+      verifyMFASetupDto.email,
     );
   }
 

@@ -3,7 +3,7 @@ import { CognitoService } from '../cognito/cognito.service';
 import { RbacService } from './../rbac/rbac.service';
 import { UserTenantMapService } from '../user-tenant-map/user-tenant-map.service';
 import { UserService } from '../user/user.service';
-import { GlobalSignOutDto, ChangePasswordDto  } from './dto/auth-dto';
+import { GlobalSignOutDto, ChangePasswordDto } from './dto/auth-dto';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +14,13 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  async signUp(email: string, password: string, name: string, tenantId: string, role: string) {
+  async signUp(
+    email: string,
+    password: string,
+    name: string,
+    tenantId: string,
+    role: string,
+  ) {
     // todo: add the user in the cognito user group based on the role
     return this.cognitoService.signUp(email, password, name, tenantId);
   }
@@ -30,26 +36,35 @@ export class AuthService {
    * 2. Creates user-tenant mapping in central database
    * 3. Assigns default role to the user
    * 4. Creates user record in the user service database
-   * 
+   *
    * @param session - MFA setup session token
    * @param totpCode - TOTP code from authenticator app
    * @param email - User's email address
    * @returns Authentication result with tokens
    */
   async verifyMFASetup(session: string, totpCode: string, email: string) {
-    const result = await this.cognitoService.verifyMFASetup(session, totpCode, email);
+    const result = await this.cognitoService.verifyMFASetup(
+      session,
+      totpCode,
+      email,
+    );
     const userId = result.userId;
     const tenantId = result.tenantId;
     const userName = result.userName;
-    delete  result.userId
-    delete  result.tenantId
-    delete  result.userName
-    
+    delete result.userId;
+    delete result.tenantId;
+    delete result.userName;
+
     // Create user-tenant mapping in the central database
     if (userId && tenantId) {
       try {
-        await this.userTenantMapService.createUserTenantMapping(tenantId, userId);
-        console.log(`✅ User-tenant mapping created for userId: ${userId}, tenantId: ${tenantId}`);
+        await this.userTenantMapService.createUserTenantMapping(
+          tenantId,
+          userId,
+        );
+        console.log(
+          `✅ User-tenant mapping created for userId: ${userId}, tenantId: ${tenantId}`,
+        );
       } catch (error) {
         console.error('❌ Failed to create user-tenant mapping:', error);
         // Don't fail the MFA setup if mapping creation fails
@@ -71,10 +86,15 @@ export class AuthService {
         const userData = {
           id: userId,
           email: email,
-          name: userName || email.split('@')[0] // Use userName from Cognito or fallback to email prefix
+          name: userName || email.split('@')[0], // Use userName from Cognito or fallback to email prefix
         };
-        
-        console.log(`🔍 About to call userService.create with data:`, userData, `tenantId:`, tenantId);
+
+        console.log(
+          `🔍 About to call userService.create with data:`,
+          userData,
+          `tenantId:`,
+          tenantId,
+        );
         const user = await this.userService.create(userData, tenantId);
         console.log(`✅ User created successfully:`, user);
       } catch (error) {
@@ -83,7 +103,7 @@ export class AuthService {
           message: error.message,
           stack: error.stack,
           code: error.code,
-          details: error.details
+          details: error.details,
         });
         // Don't fail the MFA setup if user creation fails
       }
@@ -104,13 +124,25 @@ export class AuthService {
     return this.cognitoService.forgotPassword(email);
   }
 
-  async confirmForgotPassword(email: string, password: string, confirmationCode: string) {
-    return this.cognitoService.confirmForgotPassword(email, password, confirmationCode);
+  async confirmForgotPassword(
+    email: string,
+    password: string,
+    confirmationCode: string,
+  ) {
+    return this.cognitoService.confirmForgotPassword(
+      email,
+      password,
+      confirmationCode,
+    );
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto) {
     const { email, currentPassword, newPassword } = changePasswordDto;
-    return this.cognitoService.changePassword(email, currentPassword, newPassword);
+    return this.cognitoService.changePassword(
+      email,
+      currentPassword,
+      newPassword,
+    );
   }
 
   async assignDefaultRole(email: string) {
@@ -120,9 +152,8 @@ export class AuthService {
 
   async globalSignOut(globalSignOutDto: GlobalSignOutDto) {
     const { accessToken } = globalSignOutDto;
-    
-    return this.cognitoService.globalSignOut(accessToken);
 
+    return this.cognitoService.globalSignOut(accessToken);
   }
 
   async forcedGlobalSignOut(email: string) {

@@ -1,5 +1,12 @@
 // 3. DTOs with class-validator
-import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class SignUpDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -10,7 +17,8 @@ export class SignUpDto {
   @IsNotEmpty({ message: 'Password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
   password: string;
 
@@ -26,7 +34,6 @@ export class SignUpDto {
   @MaxLength(50, { message: 'tenantId must not exceed 50 characters' })
   tenantId: string;
 
-  
   @IsString({ message: 'role must be a string' })
   @IsNotEmpty({ message: 'role is required' })
   @MinLength(2, { message: 'role must be at least 2 characters long' })

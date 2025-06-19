@@ -86,15 +86,19 @@ exports.AppModule = AppModule = __decorate([
                 cache: true,
                 expandVariables: true,
             }),
-            throttler_1.ThrottlerModule.forRoot([{
+            throttler_1.ThrottlerModule.forRoot([
+                {
                     ttl: 60000,
                     limit: 10,
-                }]),
+                },
+            ]),
             typeorm_1.TypeOrmModule.forRoot({
                 name: 'central_db',
                 type: 'postgres',
                 host: process.env.PG_HOST || 'localhost',
-                port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : parseInt(process.env.PG_PORT || '5433'),
+                port: process.env.PG_PORT
+                    ? parseInt(process.env.PG_PORT)
+                    : parseInt(process.env.PG_PORT || '5433'),
                 username: process.env.PG_USER || 'postgres',
                 password: process.env.PG_PASSWORD || 'postgres',
                 database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
@@ -116,14 +120,14 @@ exports.AppModule = AppModule = __decorate([
             tenant_module_1.TenantModule,
             cognito_module_1.CognitoModule,
             user_tenant_map_module_1.UserTenantMapModule,
-            invitation_module_1.InvitationModule
+            invitation_module_1.InvitationModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
             {
                 provide: core_1.APP_GUARD,
-                useClass: throttler_1.ThrottlerGuard
-            }
+                useClass: throttler_1.ThrottlerGuard,
+            },
         ],
     }),
     __metadata("design:paramtypes", [])
@@ -181,13 +185,16 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
             timestamp: new Date().toISOString(),
             path: request.url,
         };
-        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
+        if (error &&
+            typeof error === 'object' &&
+            'code' in error &&
+            'message' in error) {
             if (error.code === 3) {
                 const details = JSON.parse(error.details);
                 return response.status(common_1.HttpStatus.BAD_REQUEST).json({
                     ...errorResponse,
                     ...details,
-                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
                 });
             }
             const status = this.getHttpStatus(error.code);
@@ -196,21 +203,23 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
                 return response.status(status).json({
                     ...errorResponse,
                     ...details,
-                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
                 });
             }
             catch {
                 return response.status(status).json({
                     ...errorResponse,
                     message: error.details,
-                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
                 });
             }
         }
-        return response.status(error.status || common_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
+        return response
+            .status(error.status || common_1.HttpStatus.INTERNAL_SERVER_ERROR)
+            .json({
             ...errorResponse,
             message: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
     }
     getHttpStatus(code) {
@@ -258,9 +267,7 @@ let ThrottlerExceptionFilter = class ThrottlerExceptionFilter {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse();
         const status = common_1.HttpStatus.TOO_MANY_REQUESTS;
-        response
-            .status(status)
-            .json({
+        response.status(status).json({
             status: 'error',
             message: 'Rate limit exceeded. Please try again later.',
             timestamp: new Date().toISOString(),
@@ -402,7 +409,7 @@ let RolesGuard = class RolesGuard {
             return false;
         }
         const userRoles = user['cognito:groups'] || [];
-        const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+        const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role));
         if (!hasRequiredRole) {
             throw new common_1.ForbiddenException('Insufficient permissions');
         }
@@ -623,7 +630,7 @@ let AuthService = class AuthService {
                 const userData = {
                     id: userId,
                     email: email,
-                    name: userName || email.split('@')[0]
+                    name: userName || email.split('@')[0],
                 };
                 console.log(`🔍 About to call userService.create with data:`, userData, `tenantId:`, tenantId);
                 const user = await this.userService.create(userData, tenantId);
@@ -635,7 +642,7 @@ let AuthService = class AuthService {
                     message: error.message,
                     stack: error.stack,
                     code: error.code,
-                    details: error.details
+                    details: error.details,
                 });
             }
         }
@@ -953,7 +960,8 @@ const client_cognito_identity_provider_1 = __webpack_require__(/*! @aws-sdk/clie
 let CognitoRbacService = class CognitoRbacService {
     constructor(configService) {
         this.configService = configService;
-        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.userPoolId =
+            this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
         this.cognitoClient = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
             region: this.configService.get('AWS_REGION'),
             credentials: {
@@ -1062,7 +1070,7 @@ let CognitoSsoController = class CognitoSsoController {
                 success: false,
                 error: error,
                 error_description: errorDescription,
-                message: 'OAuth authentication failed'
+                message: 'OAuth authentication failed',
             };
         }
         if (!code)
@@ -1136,13 +1144,19 @@ const crypto = __webpack_require__(/*! crypto */ "crypto");
 let CognitoSsoService = class CognitoSsoService {
     constructor(configService) {
         this.configService = configService;
-        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
-        this.clientId = this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
-        this.clientSecret = this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
+        this.userPoolId =
+            this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.clientId =
+            this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
+        this.clientSecret =
+            this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
         this.region = this.configService.get('AWS_REGION') || '';
-        this.cognitoDomain = this.configService.get('AWS_COGNITO_DOMAIN') ||
-            `${this.userPoolId}.auth.${this.region}.amazoncognito.com`;
-        this.redirectUri = this.configService.get('SSO_REDIRECT_URI') || 'http://localhost:3000/auth/sso/callback';
+        this.cognitoDomain =
+            this.configService.get('AWS_COGNITO_DOMAIN') ||
+                `${this.userPoolId}.auth.${this.region}.amazoncognito.com`;
+        this.redirectUri =
+            this.configService.get('SSO_REDIRECT_URI') ||
+                'http://localhost:3000/auth/sso/callback';
         if (!this.clientSecret) {
             throw new Error('AWS_COGNITO_CLIENT_SECRET is not configured');
         }
@@ -1169,7 +1183,7 @@ let CognitoSsoService = class CognitoSsoService {
             response_type: 'code',
             scope: 'email openid phone',
             redirect_uri: this.redirectUri,
-            provider
+            provider,
         });
         if (state) {
             params.append('state', state);
@@ -1202,7 +1216,7 @@ let CognitoSsoService = class CognitoSsoService {
         console.log('🔑 Token Exchange Parameters:', {
             endpoint: tokenEndpoint,
             params: Object.fromEntries(params),
-            headers: { ...headers, Authorization: '[REDACTED]' }
+            headers: { ...headers, Authorization: '[REDACTED]' },
         });
         try {
             const response = await fetch(tokenEndpoint, {
@@ -1269,7 +1283,12 @@ let CognitoModule = class CognitoModule {
 exports.CognitoModule = CognitoModule;
 exports.CognitoModule = CognitoModule = __decorate([
     (0, common_1.Module)({
-        providers: [cognito_service_1.CognitoService, cognito_rbac_service_1.CognitoRbacService, cognito_sso_service_1.CognitoSsoService, token_revocation_service_1.TokenRevocationService],
+        providers: [
+            cognito_service_1.CognitoService,
+            cognito_rbac_service_1.CognitoRbacService,
+            cognito_sso_service_1.CognitoSsoService,
+            token_revocation_service_1.TokenRevocationService,
+        ],
         exports: [cognito_service_1.CognitoService, cognito_rbac_service_1.CognitoRbacService, cognito_sso_service_1.CognitoSsoService],
         controllers: [cognito_sso_controller_1.CognitoSsoController],
     })
@@ -1307,9 +1326,12 @@ let CognitoService = class CognitoService {
     constructor(configService, tokenRevocationService) {
         this.configService = configService;
         this.tokenRevocationService = tokenRevocationService;
-        this.userPoolId = this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
-        this.clientId = this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
-        this.clientSecret = this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
+        this.userPoolId =
+            this.configService.get('AWS_COGNITO_USER_POOL_ID') || '';
+        this.clientId =
+            this.configService.get('AWS_COGNITO_CLIENT_ID') || '';
+        this.clientSecret =
+            this.configService.get('AWS_COGNITO_CLIENT_SECRET') || '';
         this.cognitoClient = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
             region: this.configService.get('AWS_REGION'),
         });
@@ -1353,8 +1375,8 @@ let CognitoService = class CognitoService {
                 },
                 {
                     Name: 'custom:tenantId',
-                    Value: tenantId
-                }
+                    Value: tenantId,
+                },
             ],
         };
         try {
@@ -1366,7 +1388,8 @@ let CognitoService = class CognitoService {
             });
             await this.cognitoClient.send(confirmCommand);
             const signInResult = await this.signIn(email, password);
-            if (signInResult.challengeName === client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP && signInResult.session) {
+            if (signInResult.challengeName === client_cognito_identity_provider_1.ChallengeNameType.MFA_SETUP &&
+                signInResult.session) {
                 const mfaSetupResult = await this.initiateMfaSetup(signInResult.session);
                 return {
                     userSub: result.UserSub,
@@ -1494,9 +1517,9 @@ let CognitoService = class CognitoService {
                 Username: email,
             });
             const userResult = await this.cognitoClient.send(adminGetUserCommand);
-            const userId = userResult.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
-            const tenantId = userResult.UserAttributes?.find(attr => attr.Name === 'custom:tenantId')?.Value;
-            const userName = userResult.UserAttributes?.find(attr => attr.Name === 'name')?.Value;
+            const userId = userResult.UserAttributes?.find((attr) => attr.Name === 'sub')?.Value;
+            const tenantId = userResult.UserAttributes?.find((attr) => attr.Name === 'custom:tenantId')?.Value;
+            const userName = userResult.UserAttributes?.find((attr) => attr.Name === 'name')?.Value;
             return {
                 userId,
                 tenantId,
@@ -1692,7 +1715,10 @@ __decorate([
     (0, roles_decorator_1.Roles)('super-admin'),
     (0, swagger_1.ApiOperation)({ summary: 'Create a new user invitation' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Invitation sent successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request or active invitation exists' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Invalid request or active invitation exists',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [typeof (_b = typeof create_invitation_dto_1.CreateInvitationDto !== "undefined" && create_invitation_dto_1.CreateInvitationDto) === "function" ? _b : Object]),
@@ -1704,8 +1730,14 @@ __decorate([
     (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('super-admin'),
     (0, swagger_1.ApiOperation)({ summary: 'Create multiple user invitations (up to 5)' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Bulk invitations processed successfully' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request or too many invitations' }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: 'Bulk invitations processed successfully',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Invalid request or too many invitations',
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [typeof (_c = typeof create_invitation_dto_1.CreateBulkInvitationDto !== "undefined" && create_invitation_dto_1.CreateBulkInvitationDto) === "function" ? _c : Object]),
@@ -1836,8 +1868,8 @@ let InvitationService = class InvitationService {
         const existingInvitation = await this.invitationRepository.findOne({
             where: {
                 email: createInvitationDto.email,
-                is_used: false,
-                expires_at: (0, typeorm_2.MoreThan)(new Date()),
+                isUsed: false,
+                expiresAt: (0, typeorm_2.MoreThan)(new Date()),
             },
         });
         if (existingInvitation) {
@@ -1848,11 +1880,11 @@ let InvitationService = class InvitationService {
         const invitation = this.invitationRepository.create({
             ...createInvitationDto,
             token,
-            expires_at: expiresAt,
+            expiresAt,
         });
         await this.invitationRepository.save(invitation);
         const frontendUrl = this.configService.get('FRONTEND_URL');
-        const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${createInvitationDto.tenant_id}`;
+        const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${createInvitationDto.tenantId}`;
         await this.emailService.sendInvitationEmail({
             to: createInvitationDto.email,
             invitationLink,
@@ -1866,8 +1898,8 @@ let InvitationService = class InvitationService {
         const invitation = await this.invitationRepository.findOne({
             where: {
                 token,
-                is_used: false,
-                expires_at: (0, typeorm_2.MoreThan)(new Date()),
+                isUsed: false,
+                expiresAt: (0, typeorm_2.MoreThan)(new Date()),
             },
         });
         if (!invitation) {
@@ -1876,7 +1908,7 @@ let InvitationService = class InvitationService {
         return invitation;
     }
     async markInvitationAsUsed(token) {
-        await this.invitationRepository.update({ token }, { is_used: true });
+        await this.invitationRepository.update({ token }, { isUsed: true });
     }
     async createBulkInvitations(createBulkInvitationDto) {
         const results = [];
@@ -1885,8 +1917,8 @@ let InvitationService = class InvitationService {
                 const existingInvitation = await this.invitationRepository.findOne({
                     where: {
                         email: invitationDto.email,
-                        is_used: false,
-                        expires_at: (0, typeorm_2.MoreThan)(new Date()),
+                        isUsed: false,
+                        expiresAt: (0, typeorm_2.MoreThan)(new Date()),
                     },
                 });
                 if (existingInvitation) {
@@ -1902,11 +1934,11 @@ let InvitationService = class InvitationService {
                 const invitation = this.invitationRepository.create({
                     ...invitationDto,
                     token,
-                    expires_at: expiresAt,
+                    expiresAt,
                 });
                 await this.invitationRepository.save(invitation);
                 const frontendUrl = this.configService.get('FRONTEND_URL');
-                const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenant_id}`;
+                const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenantId}`;
                 await this.emailService.sendInvitationEmail({
                     to: invitationDto.email,
                     invitationLink,
@@ -2236,7 +2268,7 @@ exports.CreateTenantDto = CreateTenantDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The name of the tenant',
-        example: 'Acme Corporation'
+        example: 'Acme Corporation',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
@@ -2277,7 +2309,7 @@ __decorate([
     __metadata("design:type", String)
 ], Tenant.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'name' }),
     __metadata("design:type", String)
 ], Tenant.prototype, "name", void 0);
 __decorate([
@@ -2301,15 +2333,23 @@ __decorate([
     __metadata("design:type", String)
 ], Tenant.prototype, "dbPassword", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
+    (0, typeorm_1.Column)({ name: 'active', default: true }),
     __metadata("design:type", Boolean)
 ], Tenant.prototype, "active", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    (0, typeorm_1.Column)({
+        name: 'created_at',
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+    }),
     __metadata("design:type", typeof (_a = typeof Date !== "undefined" && Date) === "function" ? _a : Object)
 ], Tenant.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' }),
+    (0, typeorm_1.Column)({
+        name: 'updated_at',
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+    }),
     __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
 ], Tenant.prototype, "updatedAt", void 0);
 exports.Tenant = Tenant = __decorate([
@@ -2403,7 +2443,7 @@ let TenantService = TenantService_1 = class TenantService {
     }
     async findById(id) {
         const data = await this.tenantRepository.findOne({
-            where: { id }
+            where: { id },
         });
         return data;
     }
@@ -2417,9 +2457,9 @@ let TenantService = TenantService_1 = class TenantService {
         tenant.dbName = dbName;
         tenant.dbHost = this.configService.get('PG_HOST', 'localhost');
         tenant.dbPort = this.configService.get('PG_PORT', 5432);
-        console.log(tenant);
         tenant.dbUser = this.configService.get('PG_USER', 'postgres');
         tenant.dbPassword = this.configService.get('PG_PASSWORD', '1234');
+        console.log(tenant);
         await this.createTenantDatabase(tenant);
         const savedTenant = await this.tenantRepository.save(tenant);
         return savedTenant;
@@ -2642,7 +2682,7 @@ __decorate([
     __metadata("design:type", String)
 ], UserTenantMap.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
+    (0, typeorm_1.Column)({ name: 'active', default: true }),
     __metadata("design:type", Boolean)
 ], UserTenantMap.prototype, "active", void 0);
 __decorate([
@@ -2685,9 +2725,7 @@ let UserTenantMapModule = class UserTenantMapModule {
 exports.UserTenantMapModule = UserTenantMapModule;
 exports.UserTenantMapModule = UserTenantMapModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_tenant_map_entity_1.UserTenantMap], 'central_db'),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_tenant_map_entity_1.UserTenantMap], 'central_db')],
         controllers: [user_tenant_map_controller_1.UserTenantMapController],
         providers: [user_tenant_map_service_1.UserTenantMapService],
         exports: [user_tenant_map_service_1.UserTenantMapService],
@@ -2729,7 +2767,7 @@ let UserTenantMapService = class UserTenantMapService {
     }
     async createUserTenantMapping(tenantId, userId) {
         const existingMapping = await this.userTenantMapRepository.findOne({
-            where: { tenantId, userId, active: true }
+            where: { tenantId, userId, active: true },
         });
         if (existingMapping) {
             return existingMapping;
@@ -2737,13 +2775,13 @@ let UserTenantMapService = class UserTenantMapService {
         const mapping = this.userTenantMapRepository.create({
             tenantId,
             userId,
-            active: true
+            active: true,
         });
         return await this.userTenantMapRepository.save(mapping);
     }
     async getUserTenantMapping(tenantId, userId) {
         return await this.userTenantMapRepository.findOne({
-            where: { tenantId, userId, active: true }
+            where: { tenantId, userId, active: true },
         });
     }
     async deactivateUserTenantMapping(tenantId, userId) {
@@ -2751,12 +2789,12 @@ let UserTenantMapService = class UserTenantMapService {
     }
     async getMappingsByTenantId(tenantId) {
         return await this.userTenantMapRepository.find({
-            where: { tenantId, active: true }
+            where: { tenantId, active: true },
         });
     }
     async getMappingsByUserId(userId) {
         return await this.userTenantMapRepository.find({
-            where: { userId, active: true }
+            where: { userId, active: true },
         });
     }
 };
@@ -2908,7 +2946,11 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get users by email' }),
     (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return users with matching email.', type: user_dto_2.UserSearchResponseDto }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Return users with matching email.',
+        type: user_dto_2.UserSearchResponseDto,
+    }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
     (0, common_1.Get)('search/email/:email'),
@@ -2921,7 +2963,11 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get user count' }),
     (0, swagger_1.ApiHeader)({ name: 'x-tenant-id', required: true, description: 'Tenant ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return total user count.', type: user_dto_2.UserCountResponseDto }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Return total user count.',
+        type: user_dto_2.UserCountResponseDto,
+    }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request.' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Tenant not found.' }),
     (0, common_1.Get)('count/total'),
@@ -3031,7 +3077,7 @@ exports.UserModule = UserModule = __decorate([
                     inject: [config_1.ConfigService],
                 },
             ]),
-            tenant_module_1.TenantModule
+            tenant_module_1.TenantModule,
         ],
         controllers: [user_controller_1.UserController],
         providers: [user_service_1.UserService],
@@ -3126,7 +3172,7 @@ let UserService = UserService_1 = class UserService {
         const metadata = await this.prepareMetadata(tenantId);
         return (0, rxjs_1.firstValueFrom)(this.userService.updateUser({
             id,
-            ...updateUserDto
+            ...updateUserDto,
         }, metadata));
     }
     async remove(id, tenantId) {
@@ -3136,7 +3182,7 @@ let UserService = UserService_1 = class UserService {
     async findUsersByEmail(email, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
         const allUsers = await (0, rxjs_1.firstValueFrom)(this.userService.listUsers({}, metadata));
-        return allUsers.items?.filter(user => user.email === email) || [];
+        return allUsers.items?.filter((user) => user.email === email) || [];
     }
     async findActiveUsers(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
@@ -3309,7 +3355,7 @@ exports.UtilsModule = UtilsModule = __decorate([
     (0, common_1.Module)({
         imports: [config_1.ConfigModule],
         providers: [token_revocation_service_1.TokenRevocationService, email_service_1.EmailService],
-        exports: [token_revocation_service_1.TokenRevocationService, email_service_1.EmailService]
+        exports: [token_revocation_service_1.TokenRevocationService, email_service_1.EmailService],
     })
 ], UtilsModule);
 
@@ -3369,7 +3415,7 @@ __decorate([
     }),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
-], CreateInvitationDto.prototype, "tenant_id", void 0);
+], CreateInvitationDto.prototype, "tenantId", void 0);
 class CreateBulkInvitationDto {
 }
 exports.CreateBulkInvitationDto = CreateBulkInvitationDto;
@@ -3415,7 +3461,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The id of the user (optional, for external systems like Cognito)',
         example: 'cognito-abc123',
-        required: false
+        required: false,
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -3424,7 +3470,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The email of the user',
-        example: 'user@example.com'
+        example: 'user@example.com',
     }),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
@@ -3433,7 +3479,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The name of the user',
-        example: 'John Doe'
+        example: 'John Doe',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
@@ -3446,7 +3492,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The email of the user',
         example: 'user@example.com',
-        required: false
+        required: false,
     }),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsOptional)(),
@@ -3456,7 +3502,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The name of the user',
         example: 'John Doe',
-        required: false
+        required: false,
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
@@ -3495,41 +3541,42 @@ __decorate([
     __metadata("design:type", String)
 ], Invitation.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'email' }),
     __metadata("design:type", String)
 ], Invitation.prototype, "email", void 0);
 __decorate([
     (0, typeorm_1.Column)({
+        name: 'role',
         type: 'enum',
         enum: create_invitation_dto_1.UserRole,
-        default: create_invitation_dto_1.UserRole.USER
+        default: create_invitation_dto_1.UserRole.USER,
     }),
     __metadata("design:type", typeof (_a = typeof create_invitation_dto_1.UserRole !== "undefined" && create_invitation_dto_1.UserRole) === "function" ? _a : Object)
 ], Invitation.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'tenant_id' }),
     __metadata("design:type", String)
-], Invitation.prototype, "tenant_id", void 0);
+], Invitation.prototype, "tenantId", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ name: 'token' }),
     __metadata("design:type", String)
 ], Invitation.prototype, "token", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: false }),
+    (0, typeorm_1.Column)({ name: 'is_used', default: false }),
     __metadata("design:type", Boolean)
-], Invitation.prototype, "is_used", void 0);
+], Invitation.prototype, "isUsed", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp' }),
+    (0, typeorm_1.Column)({ name: 'expires_at', type: 'timestamp' }),
     __metadata("design:type", typeof (_b = typeof Date !== "undefined" && Date) === "function" ? _b : Object)
-], Invitation.prototype, "expires_at", void 0);
+], Invitation.prototype, "expiresAt", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
-], Invitation.prototype, "created_at", void 0);
+], Invitation.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", typeof (_d = typeof Date !== "undefined" && Date) === "function" ? _d : Object)
-], Invitation.prototype, "updated_at", void 0);
+], Invitation.prototype, "updatedAt", void 0);
 exports.Invitation = Invitation = __decorate([
     (0, typeorm_1.Entity)('invitations')
 ], Invitation);
@@ -3567,14 +3614,14 @@ let TransformInterceptor = class TransformInterceptor {
                         page,
                         limit,
                         results: data?.items?.length || 0,
-                        total: data.total
+                        total: data.total,
                     },
                     data: data.items || [],
                 };
             }
             return {
                 status: 'success',
-                data: data
+                data: data,
             };
         }));
     }

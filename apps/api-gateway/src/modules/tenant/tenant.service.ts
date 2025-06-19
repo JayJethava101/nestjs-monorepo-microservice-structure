@@ -28,14 +28,13 @@ export class TenantService {
   }
 
   async findById(id: string): Promise<Tenant | null> {
-
     // console.log( {id: `${id}`})
 
-    const data = await this.tenantRepository.findOne({ 
-      where: {id}
-     });
+    const data = await this.tenantRepository.findOne({
+      where: { id },
+    });
     // console.log('data--->', data)
-    return data
+    return data;
   }
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
@@ -43,7 +42,7 @@ export class TenantService {
     const dbName = `tenant_${createTenantDto.name
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
-    
+
     // Create tenant record
     const tenant = new Tenant();
     tenant.id = uuidv4();
@@ -51,25 +50,24 @@ export class TenantService {
     tenant.dbName = dbName;
     tenant.dbHost = this.configService.get<string>('PG_HOST', 'localhost');
     tenant.dbPort = this.configService.get<number>('PG_PORT', 5432);
+    tenant.dbUser = this.configService.get<string>('PG_USER', 'postgres');
+    tenant.dbPassword = this.configService.get<string>('PG_PASSWORD', '1234');
 
-    console.log(tenant)
-    
+    console.log(tenant);
+
     // todo: Encrypt database credentials before saving
     // tenant.dbUser = await this.kmsService.encrypt(this.configService.get<string>('PG_USER', 'postgres'));
     // tenant.dbPassword = await this.kmsService.encrypt(this.configService.get<string>('PG_PASSWORD', 'postgres'));
-    tenant.dbUser = this.configService.get<string>('PG_USER', 'postgres');
-    tenant.dbPassword = this.configService.get<string>('PG_PASSWORD', '1234')
 
-    
     // Create the physical database
     await this.createTenantDatabase(tenant);
 
     //  // Initialize database schema
     //  await this.initializeTenantSchema(tenant);
-    
+
     // Save tenant in central database
     const savedTenant = await this.tenantRepository.save(tenant);
-    
+
     return savedTenant;
   }
 
@@ -91,12 +89,12 @@ export class TenantService {
       username: tenant.dbUser,
       password: tenant.dbPassword,
       database: 'postgres', // Default postgres database
-    })
+    });
 
     await pgConnection.initialize();
 
-    console.log('pgConnection initialized...')
-    
+    console.log('pgConnection initialized...');
+
     try {
       // Create the tenant database
       await pgConnection.query(`CREATE DATABASE ${tenant.dbName}`);
@@ -113,10 +111,10 @@ export class TenantService {
   //   try {
   //     // Get connection to tenant database
   //     const connection = await this.databaseService.getConnectionForTenant(tenant.id);
-      
+
   //     // Synchronize schema
   //     await connection.synchronize();
-      
+
   //     this.logger.log(`Initialized schema for tenant ${tenant.name}`);
   //   } catch (error) {
   //     this.logger.error(`Failed to initialize schema for tenant ${tenant.name}`, error);

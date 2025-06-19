@@ -5,11 +5,9 @@ import { UserTenantMapController } from './user-tenant-map.controller';
 import { UserTenantMap } from './user-tenant-map.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserTenantMap], 'central_db'),
-  ],
+  imports: [TypeOrmModule.forFeature([UserTenantMap], 'central_db')],
   controllers: [UserTenantMapController],
   providers: [UserTenantMapService],
   exports: [UserTenantMapService],
 })
-export class UserTenantMapModule {} 
+export class UserTenantMapModule {}

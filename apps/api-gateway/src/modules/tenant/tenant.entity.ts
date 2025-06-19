@@ -5,12 +5,12 @@ export class Tenant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'name' })
   name: string;
 
   @Column({ name: 'db_host' })
   dbHost: string;
-
+  
   @Column({ name: 'db_port' })
   dbPort: number;
 
@@ -23,12 +23,20 @@ export class Tenant {
   @Column({ name: 'db_password', type: 'text' })
   dbPassword: string;
 
-  @Column({ default: true })
+  @Column({ name: 'active', default: true })
   active: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 }

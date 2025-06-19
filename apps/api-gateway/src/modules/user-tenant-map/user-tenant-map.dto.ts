@@ -19,4 +19,4 @@ export class UserTenantMappingResponseDto {
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
-} 
+}

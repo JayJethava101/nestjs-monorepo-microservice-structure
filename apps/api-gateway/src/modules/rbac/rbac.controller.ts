@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { RbacService } from './rbac.service';
 import { JwtGuard } from '../../guards/jwt/jwt.guard';
 import { RolesGuard } from '../../guards/roles/roles.guard';
@@ -15,7 +23,6 @@ export class RbacController {
     const { roleName, description } = payload;
     return this.rbacService.createRole(roleName, description);
   }
-
 
   @Get('roles')
   async listRoles(

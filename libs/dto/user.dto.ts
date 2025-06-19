@@ -3,9 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({
-    description: 'The id of the user (optional, for external systems like Cognito)',
+    description:
+      'The id of the user (optional, for external systems like Cognito)',
     example: 'cognito-abc123',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()
@@ -13,7 +14,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'The email of the user',
-    example: 'user@example.com'
+    example: 'user@example.com',
   })
   @IsEmail()
   @IsNotEmpty()
@@ -21,7 +22,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'The name of the user',
-    example: 'John Doe'
+    example: 'John Doe',
   })
   @IsString()
   @IsNotEmpty()
@@ -32,7 +33,7 @@ export class UpdateUserDto {
   @ApiProperty({
     description: 'The email of the user',
     example: 'user@example.com',
-    required: false
+    required: false,
   })
   @IsEmail()
   @IsOptional()
@@ -41,7 +42,7 @@ export class UpdateUserDto {
   @ApiProperty({
     description: 'The name of the user',
     example: 'John Doe',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()

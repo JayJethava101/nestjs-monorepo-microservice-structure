@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { UserRole } from '../dto/invitation/create-invitation.dto';
 
 @Entity('invitations')
@@ -6,31 +12,32 @@ export class Invitation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'email' })
   email: string;
 
   @Column({
+    name: 'role',
     type: 'enum',
     enum: UserRole,
-    default: UserRole.USER
+    default: UserRole.USER,
   })
   role: UserRole;
 
-  @Column()
-  tenant_id: string;
+  @Column({ name: 'tenant_id' })
+  tenantId: string;
 
-  @Column()
+  @Column({ name: 'token' })
   token: string;
 
-  @Column({ default: false })
-  is_used: boolean;
+  @Column({ name: 'is_used', default: false })
+  isUsed: boolean;
 
-  @Column({ type: 'timestamp' })
-  expires_at: Date;
+  @Column({ name: 'expires_at', type: 'timestamp' })
+  expiresAt: Date;
 
-  @CreateDateColumn()
-  created_at: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @UpdateDateColumn()
-  updated_at: Date;
-} 
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}

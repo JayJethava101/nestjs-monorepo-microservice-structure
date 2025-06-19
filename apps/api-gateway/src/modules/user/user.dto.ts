@@ -16,4 +16,4 @@ export class UserNameCountResponseDto {
 
   @ApiProperty({ description: 'Count of users with this name' })
   count: number;
-} 
+}

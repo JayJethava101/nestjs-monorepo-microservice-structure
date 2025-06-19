@@ -54,13 +54,21 @@ export class ExpiredCodeException extends CognitoException {
 
 export class LimitExceededException extends CognitoException {
   constructor() {
-    super('Attempt limit exceeded, please try again later', 429, 'LIMIT_EXCEEDED');
+    super(
+      'Attempt limit exceeded, please try again later',
+      429,
+      'LIMIT_EXCEEDED',
+    );
   }
 }
 
 export class TooManyRequestsException extends CognitoException {
   constructor() {
-    super('Too many requests, please try again later', 429, 'TOO_MANY_REQUESTS');
+    super(
+      'Too many requests, please try again later',
+      429,
+      'TOO_MANY_REQUESTS',
+    );
   }
 }
 

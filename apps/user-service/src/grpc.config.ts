@@ -7,4 +7,4 @@ export const grpcConfig = {
     protoPath: join(__dirname, '../../../libs/proto/user.proto'),
     url: 'localhost:5001',
   },
-}; 
+};

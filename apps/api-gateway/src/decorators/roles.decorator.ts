@@ -7,4 +7,3 @@ export const ROLES_KEY = 'roles';
  * @param roles Array of role names required to access the route
  */
 export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
-

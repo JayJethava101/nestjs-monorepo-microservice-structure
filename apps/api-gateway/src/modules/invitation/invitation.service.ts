@@ -1,10 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
-import { CreateInvitationDto, CreateBulkInvitationDto } from '@libs/dto/invitation/create-invitation.dto';
+import {
+  CreateInvitationDto,
+  CreateBulkInvitationDto,
+} from '@libs/dto/invitation/create-invitation.dto';
 import { Invitation } from '@libs/entity/invitation.entity';
 import { RbacService } from '../rbac/rbac.service';
 import { CognitoService } from '../cognito/cognito.service';
@@ -21,18 +29,22 @@ export class InvitationService {
     private emailService: EmailService,
   ) {}
 
-  async createInvitation(createInvitationDto: CreateInvitationDto): Promise<{ message: string }> {
+  async createInvitation(
+    createInvitationDto: CreateInvitationDto,
+  ): Promise<{ message: string }> {
     // Check if invitation already exists and is not expired
     const existingInvitation = await this.invitationRepository.findOne({
       where: {
         email: createInvitationDto.email,
-        is_used: false,
-        expires_at: MoreThan(new Date()),
+        isUsed: false,
+        expiresAt: MoreThan(new Date()),
       },
     });
 
     if (existingInvitation) {
-      throw new BadRequestException('An active invitation already exists for this email');
+      throw new BadRequestException(
+        'An active invitation already exists for this email',
+      );
     }
 
     // Generate invitation token
@@ -43,14 +55,14 @@ export class InvitationService {
     const invitation = this.invitationRepository.create({
       ...createInvitationDto,
       token,
-      expires_at: expiresAt,
+      expiresAt,
     });
 
     await this.invitationRepository.save(invitation);
 
     // Generate invitation link
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${createInvitationDto.tenant_id}`;
+    const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${createInvitationDto.tenantId}`;
 
     // Send invitation email
     await this.emailService.sendInvitationEmail({
@@ -68,8 +80,8 @@ export class InvitationService {
     const invitation = await this.invitationRepository.findOne({
       where: {
         token,
-        is_used: false,
-        expires_at: MoreThan(new Date()),
+        isUsed: false,
+        expiresAt: MoreThan(new Date()),
       },
     });
 
@@ -81,13 +93,15 @@ export class InvitationService {
   }
 
   async markInvitationAsUsed(token: string): Promise<void> {
-    await this.invitationRepository.update(
-      { token },
-      { is_used: true }
-    );
+    await this.invitationRepository.update({ token }, { isUsed: true });
   }
 
-  async createBulkInvitations(createBulkInvitationDto: CreateBulkInvitationDto): Promise<{ message: string; results: { email: string; status: string; message?: string }[] }> {
+  async createBulkInvitations(
+    createBulkInvitationDto: CreateBulkInvitationDto,
+  ): Promise<{
+    message: string;
+    results: { email: string; status: string; message?: string }[];
+  }> {
     const results = [];
 
     for (const invitationDto of createBulkInvitationDto.invitations) {
@@ -96,8 +110,8 @@ export class InvitationService {
         const existingInvitation = await this.invitationRepository.findOne({
           where: {
             email: invitationDto.email,
-            is_used: false,
-            expires_at: MoreThan(new Date()),
+            isUsed: false,
+            expiresAt: MoreThan(new Date()),
           },
         });
 
@@ -118,14 +132,14 @@ export class InvitationService {
         const invitation = this.invitationRepository.create({
           ...invitationDto,
           token,
-          expires_at: expiresAt,
+          expiresAt,
         });
 
         await this.invitationRepository.save(invitation);
 
         // Generate invitation link
         const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-        const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenant_id}`;
+        const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenantId}`;
 
         // Send invitation email
         await this.emailService.sendInvitationEmail({
@@ -152,4 +166,4 @@ export class InvitationService {
       results,
     };
   }
-} 
+}

@@ -18,4 +18,4 @@ import { TestController } from './app.controller';
   ],
   controllers: [TestController],
 })
-export class AppModule {} 
+export class AppModule {}

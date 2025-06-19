@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiResponse } from '../interfaces/response.interface';
@@ -9,8 +14,13 @@ interface PaginatedData<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T extends object> implements NestInterceptor<T, ApiResponse<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
+export class TransformInterceptor<T extends object>
+  implements NestInterceptor<T, ApiResponse<T>>
+{
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<ApiResponse<T>> {
     const request = context.switchToHttp().getRequest();
 
     // Get pagination parameters from query
@@ -27,18 +37,18 @@ export class TransformInterceptor<T extends object> implements NestInterceptor<T
               page,
               limit,
               results: data?.items?.length || 0,
-              total: data.total
+              total: data.total,
             },
-            data: data.items as T || [],
+            data: (data.items as T) || [],
           };
         }
 
         // Default response
         return {
           status: 'success',
-          data: data as T
+          data: data,
         };
-      })
+      }),
     );
   }
-} 
+}

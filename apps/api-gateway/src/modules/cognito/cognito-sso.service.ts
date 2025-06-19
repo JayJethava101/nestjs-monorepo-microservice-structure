@@ -18,14 +18,20 @@ export class CognitoSsoService {
   private readonly cognitoDomain: string;
 
   constructor(private configService: ConfigService) {
-    this.userPoolId = this.configService.get<string>('AWS_COGNITO_USER_POOL_ID') || '';
-    this.clientId = this.configService.get<string>('AWS_COGNITO_CLIENT_ID') || '';
-    this.clientSecret = this.configService.get<string>('AWS_COGNITO_CLIENT_SECRET') || '';
+    this.userPoolId =
+      this.configService.get<string>('AWS_COGNITO_USER_POOL_ID') || '';
+    this.clientId =
+      this.configService.get<string>('AWS_COGNITO_CLIENT_ID') || '';
+    this.clientSecret =
+      this.configService.get<string>('AWS_COGNITO_CLIENT_SECRET') || '';
     this.region = this.configService.get<string>('AWS_REGION') || '';
-    this.cognitoDomain = this.configService.get<string>('AWS_COGNITO_DOMAIN') || 
+    this.cognitoDomain =
+      this.configService.get<string>('AWS_COGNITO_DOMAIN') ||
       `${this.userPoolId}.auth.${this.region}.amazoncognito.com`;
-    this.redirectUri = this.configService.get<string>('SSO_REDIRECT_URI') || 'http://localhost:3000/auth/sso/callback';
-    
+    this.redirectUri =
+      this.configService.get<string>('SSO_REDIRECT_URI') ||
+      'http://localhost:3000/auth/sso/callback';
+
     if (!this.clientSecret) {
       throw new Error('AWS_COGNITO_CLIENT_SECRET is not configured');
     }
@@ -52,13 +58,13 @@ export class CognitoSsoService {
     }
 
     const state = this.generateState();
-    
+
     const params = new URLSearchParams({
       client_id: this.clientId,
       response_type: 'code',
       scope: 'email openid phone',
       redirect_uri: this.redirectUri,
-      provider
+      provider,
     });
 
     if (state) {
@@ -80,7 +86,7 @@ export class CognitoSsoService {
     }
 
     const tokenEndpoint = `${this.cognitoDomain}/oauth2/token`;
-    
+
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: this.clientId,
@@ -93,14 +99,16 @@ export class CognitoSsoService {
     };
 
     if (this.clientSecret) {
-      const authString = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+      const authString = Buffer.from(
+        `${this.clientId}:${this.clientSecret}`,
+      ).toString('base64');
       headers['Authorization'] = `Basic ${authString}`;
     }
 
     console.log('🔑 Token Exchange Parameters:', {
       endpoint: tokenEndpoint,
       params: Object.fromEntries(params),
-      headers: { ...headers, Authorization: '[REDACTED]' }
+      headers: { ...headers, Authorization: '[REDACTED]' },
     });
 
     try {
@@ -113,12 +121,14 @@ export class CognitoSsoService {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('❌ Token exchange error:', errorData);
-        throw new UnauthorizedException(errorData.error_description || 'Failed to exchange code for tokens');
+        throw new UnauthorizedException(
+          errorData.error_description || 'Failed to exchange code for tokens',
+        );
       }
 
       const tokens = await response.json();
       console.log('✅ Token exchange successful');
-      
+
       return {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,

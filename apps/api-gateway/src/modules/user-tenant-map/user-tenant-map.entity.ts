@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('user_tenant_mappings')
 export class UserTenantMap {
@@ -11,7 +17,7 @@ export class UserTenantMap {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ default: true })
+  @Column({ name: 'active', default: true })
   active: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -19,4 +25,4 @@ export class UserTenantMap {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-} 
+}

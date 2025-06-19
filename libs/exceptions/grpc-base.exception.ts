@@ -19,7 +19,6 @@ export class GrpcBaseException extends RpcException {
       message,
       code,
       module,
-    
     });
   }
 }
@@ -39,7 +38,11 @@ export class ResourceValidationException extends GrpcBaseException {
 
 export class ResourceAlreadyExistsException extends GrpcBaseException {
   constructor(resource: string, identifier: string, module: string) {
-    super(`${resource} with ${identifier} already exists`, ErrorCode.ALREADY_EXISTS, module);
+    super(
+      `${resource} with ${identifier} already exists`,
+      ErrorCode.ALREADY_EXISTS,
+      module,
+    );
   }
 }
 
@@ -56,7 +59,7 @@ export class ResourceUnauthenticatedException extends GrpcBaseException {
 }
 
 export class ResourceInternalException extends GrpcBaseException {
-  constructor(message: string, module: string,) {
-    super(message, ErrorCode.INTERNAL_ERROR, module,);
+  constructor(message: string, module: string) {
+    super(message, ErrorCode.INTERNAL_ERROR, module);
   }
-} 
+}

@@ -1,7 +1,23 @@
-import { Controller, Post, Body, UseGuards, Get, Query, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { InvitationService } from './invitation.service';
-import { CreateInvitationDto, CreateBulkInvitationDto } from '@libs/dto/invitation/create-invitation.dto';
+import {
+  CreateInvitationDto,
+  CreateBulkInvitationDto,
+} from '@libs/dto/invitation/create-invitation.dto';
 import { JwtGuard } from '../../guards/jwt/jwt.guard';
 import { RolesGuard } from '../../guards/roles/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -19,7 +35,10 @@ export class InvitationController {
   @Roles('super-admin')
   @ApiOperation({ summary: 'Create a new user invitation' })
   @ApiResponse({ status: 201, description: 'Invitation sent successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid request or active invitation exists' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or active invitation exists',
+  })
   async createInvitation(@Body() createInvitationDto: CreateInvitationDto) {
     return this.invitationService.createInvitation(createInvitationDto);
   }
@@ -29,10 +48,20 @@ export class InvitationController {
   @UseGuards(JwtGuard, RolesGuard)
   @Roles('super-admin')
   @ApiOperation({ summary: 'Create multiple user invitations (up to 5)' })
-  @ApiResponse({ status: 201, description: 'Bulk invitations processed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid request or too many invitations' })
-  async createBulkInvitations(@Body() createBulkInvitationDto: CreateBulkInvitationDto) {
-    return this.invitationService.createBulkInvitations(createBulkInvitationDto);
+  @ApiResponse({
+    status: 201,
+    description: 'Bulk invitations processed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or too many invitations',
+  })
+  async createBulkInvitations(
+    @Body() createBulkInvitationDto: CreateBulkInvitationDto,
+  ) {
+    return this.invitationService.createBulkInvitations(
+      createBulkInvitationDto,
+    );
   }
 
   @Get('validate')
@@ -45,4 +74,4 @@ export class InvitationController {
     }
     return this.invitationService.validateInvitation(token);
   }
-} 
+}

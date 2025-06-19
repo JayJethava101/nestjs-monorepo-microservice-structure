@@ -27,19 +27,23 @@ import { Invitation } from '@libs/entity/invitation.entity';
       cache: true,
       expandVariables: true,
     }),
-    
+
     // Rate limiting configuration
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // Time window in mili seconds
-      limit: 10, // Maximum number of requests within the time window
-    }]),
-    
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time window in mili seconds
+        limit: 10, // Maximum number of requests within the time window
+      },
+    ]),
+
     // Central management database connection
     TypeOrmModule.forRoot({
       name: 'central_db',
       type: 'postgres',
       host: process.env.PG_HOST || 'localhost',
-      port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : parseInt(process.env.PG_PORT || '5433'),
+      port: process.env.PG_PORT
+        ? parseInt(process.env.PG_PORT)
+        : parseInt(process.env.PG_PORT || '5433'),
       username: process.env.PG_USER || 'postgres',
       password: process.env.PG_PASSWORD || 'postgres',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
@@ -64,14 +68,14 @@ import { Invitation } from '@libs/entity/invitation.entity';
     TenantModule,
     CognitoModule,
     UserTenantMapModule,
-    InvitationModule
+    InvitationModule,
   ],
   controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard
-    }
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {
@@ -84,4 +88,4 @@ export class AppModule {
       PG_MANAGEMENT_DB: process.env.PG_MANAGEMENT_DB,
     });
   }
-} 
+}

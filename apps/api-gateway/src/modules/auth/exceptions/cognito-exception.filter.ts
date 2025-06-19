@@ -1,24 +1,24 @@
-import { 
-  ArgumentsHost, 
-  Catch, 
-  ExceptionFilter, 
-  HttpException, 
-  HttpStatus, 
-  Logger 
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { 
-  CognitoException, 
-  UserNotFoundException, 
-  UserNotConfirmedException, 
-  InvalidPasswordException, 
-  NotAuthorizedException, 
-  UsernameExistsException, 
-  CodeMismatchException, 
-  ExpiredCodeException, 
-  LimitExceededException, 
+import {
+  CognitoException,
+  UserNotFoundException,
+  UserNotConfirmedException,
+  InvalidPasswordException,
+  NotAuthorizedException,
+  UsernameExistsException,
+  CodeMismatchException,
+  ExpiredCodeException,
+  LimitExceededException,
   TooManyRequestsException,
-  InvalidParameterException
+  InvalidParameterException,
 } from './cognito-exceptions';
 
 @Catch()
@@ -38,11 +38,10 @@ export class CognitoExceptionFilter implements ExceptionFilter {
       message: 'Internal server error',
       errorCode: 'INTERNAL_ERROR',
     };
-    
 
     // Check if it's a cognito-specific exception
     if (exception instanceof CognitoException) {
-      console.log('---> The error captured in cognito-specific exception')
+      console.log('---> The error captured in cognito-specific exception');
       status = exception.statusCode;
       errorResponse = {
         ...errorResponse,
@@ -51,9 +50,9 @@ export class CognitoExceptionFilter implements ExceptionFilter {
         errorCode: exception.errorCode,
       };
     }
-    // Handle NestJS HTTP exceptions 
+    // Handle NestJS HTTP exceptions
     else if (exception instanceof HttpException) {
-     console.log('---> The error captured in NestJS HTTP exceptions')
+      console.log('---> The error captured in NestJS HTTP exceptions');
 
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
@@ -61,15 +60,20 @@ export class CognitoExceptionFilter implements ExceptionFilter {
       errorResponse = {
         ...errorResponse,
         statusCode: status,
-        message: typeof exceptionResponse === 'object' 
-          ? (exceptionResponse as any).message || 'Http exception'
-          : exceptionResponse,
+        message:
+          typeof exceptionResponse === 'object'
+            ? (exceptionResponse as any).message || 'Http exception'
+            : exceptionResponse,
         errorCode: 'HTTP_ERROR',
       };
-    } 
+    }
     // Handle AWS SDK exceptions and map them to our custom exceptions
-    else if (typeof exception === 'object' && exception !== null && 'constructor' in exception) {
-      console.log('---> The error captured in AWS SDK exceptions')
+    else if (
+      typeof exception === 'object' &&
+      exception !== null &&
+      'constructor' in exception
+    ) {
+      console.log('---> The error captured in AWS SDK exceptions');
 
       if (exception.constructor.name === 'UserNotFoundException') {
         const cognitoError = new UserNotFoundException();
@@ -104,10 +108,10 @@ export class CognitoExceptionFilter implements ExceptionFilter {
         errorResponse = {
           ...errorResponse,
           statusCode: status,
-          message: (exception as { message: string, staus: number })?.message || cognitoError.message,
+          message:
+            (exception as { message: string; staus: number })?.message ||
+            cognitoError.message,
           errorCode: cognitoError.errorCode,
-        
-        
         };
       } else if (exception.constructor.name === 'UsernameExistsException') {
         const cognitoError = new UsernameExistsException();
@@ -165,7 +169,6 @@ export class CognitoExceptionFilter implements ExceptionFilter {
         };
       }
     }
-   
 
     // Log the error (but not in production for sensitive info)
     this.logger.error(`${request.method} ${request.url} ${status}`, exception);

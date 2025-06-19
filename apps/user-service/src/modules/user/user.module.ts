@@ -15,7 +15,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         useFactory: (configService: ConfigService) => {
           const isDocker = process.env.NODE_ENV === 'production';
           const serviceUrl = isDocker ? 'user-service:5001' : 'localhost:5001';
-          
+
           return {
             transport: Transport.GRPC,
             options: {

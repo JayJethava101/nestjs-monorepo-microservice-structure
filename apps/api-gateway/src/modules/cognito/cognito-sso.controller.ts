@@ -1,4 +1,14 @@
-import { Controller, Get, Query, Post, Body, HttpException, HttpStatus, Res, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+  Res,
+  BadRequestException,
+} from '@nestjs/common';
 import { CognitoSsoService } from './cognito-sso.service';
 
 @Controller('auth/sso')
@@ -23,7 +33,7 @@ export class CognitoSsoController {
     @Query('state') state: string,
     @Query('error') error: string,
     @Query('error_description') errorDescription: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
     console.log('📥 OAuth Callback Received');
     console.log('Code:', code ? `${code.substring(0, 20)}...` : 'MISSING');
@@ -37,32 +47,31 @@ export class CognitoSsoController {
         success: false,
         error: error,
         error_description: errorDescription,
-        message: 'OAuth authentication failed'
-      }
+        message: 'OAuth authentication failed',
+      };
     }
 
     // Validate authorization code
-    if (!code) 
-      throw new BadRequestException('Authorization code not received');
+    if (!code) throw new BadRequestException('Authorization code not received');
 
-    
     try {
       // Exchange code for tokens
-      const tokens = await this.cognitoSsoService.exchangeCodeForTokens(code, state);
+      const tokens = await this.cognitoSsoService.exchangeCodeForTokens(
+        code,
+        state,
+      );
 
       console.log('✅ Token exchange successful');
-      console.log(tokens)
-      
+      console.log(tokens);
+
       return {
         success: true,
         message: 'SSO authentication successful!',
         tokens,
-      }
+      };
     } catch (error) {
       console.error('❌ Token exchange failed:', error);
-      throw error
+      throw error;
     }
   }
-
-  
 }

@@ -20,7 +20,9 @@ export class UserService implements OnModuleInit {
   onModuleInit() {
     this.userService = this.client.getService<IUserService>('UserService');
     this.logger.log('UserService initialized with gRPC client');
-    this.logger.log(`gRPC client service available: ${this.userService ? 'Yes' : 'No'}`);
+    this.logger.log(
+      `gRPC client service available: ${this.userService ? 'Yes' : 'No'}`,
+    );
   }
 
   private async prepareMetadata(tenantId: string): Promise<Metadata> {
@@ -36,22 +38,32 @@ export class UserService implements OnModuleInit {
     const metadata = new Metadata();
     metadata.add('tenant-id', tenantId);
     metadata.add('db-name', tenant.dbName);
-    this.logger.log(`Prepared metadata - tenantId: ${tenantId}, dbName: ${tenant.dbName}`);
+    this.logger.log(
+      `Prepared metadata - tenantId: ${tenantId}, dbName: ${tenant.dbName}`,
+    );
     return metadata;
   }
 
   async findNameCounts(tenantId: string) {
     const metadata = await this.prepareMetadata(tenantId);
-    return firstValueFrom(this.userService.listUsersWithNameCount({}, metadata));
+    return firstValueFrom(
+      this.userService.listUsersWithNameCount({}, metadata),
+    );
   }
 
   async create(createUserDto: CreateUserDto, tenantId: string) {
-    this.logger.log(`Creating user with data: ${JSON.stringify(createUserDto)} for tenant: ${tenantId}`);
+    this.logger.log(
+      `Creating user with data: ${JSON.stringify(createUserDto)} for tenant: ${tenantId}`,
+    );
     const metadata = await this.prepareMetadata(tenantId);
     this.logger.log('Sending gRPC request to user-service...');
     try {
-      const result = await firstValueFrom(this.userService.createUser(createUserDto, metadata));
-      this.logger.log(`User created successfully via gRPC: ${JSON.stringify(result)}`);
+      const result = await firstValueFrom(
+        this.userService.createUser(createUserDto, metadata),
+      );
+      this.logger.log(
+        `User created successfully via gRPC: ${JSON.stringify(result)}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`gRPC call failed: ${error.message}`, error.stack);
@@ -71,10 +83,15 @@ export class UserService implements OnModuleInit {
 
   async update(id: string, updateUserDto: UpdateUserDto, tenantId: string) {
     const metadata = await this.prepareMetadata(tenantId);
-    return firstValueFrom(this.userService.updateUser({
-      id,
-      ...updateUserDto
-    }, metadata));
+    return firstValueFrom(
+      this.userService.updateUser(
+        {
+          id,
+          ...updateUserDto,
+        },
+        metadata,
+      ),
+    );
   }
 
   async remove(id: string, tenantId: string) {
@@ -87,21 +104,27 @@ export class UserService implements OnModuleInit {
     const metadata = await this.prepareMetadata(tenantId);
     // This would require adding a corresponding method to the gRPC service
     // For now, we'll get all users and filter by email
-    const allUsers = await firstValueFrom(this.userService.listUsers({}, metadata));
-    return allUsers.items?.filter(user => user.email === email) || [];
+    const allUsers = await firstValueFrom(
+      this.userService.listUsers({}, metadata),
+    );
+    return allUsers.items?.filter((user) => user.email === email) || [];
   }
 
   async findActiveUsers(tenantId: string) {
     const metadata = await this.prepareMetadata(tenantId);
     // Since the User entity doesn't have an isActive property,
     // we'll return all users for now. This can be enhanced when the entity is updated
-    const allUsers = await firstValueFrom(this.userService.listUsers({}, metadata));
+    const allUsers = await firstValueFrom(
+      this.userService.listUsers({}, metadata),
+    );
     return allUsers.items || [];
   }
 
   async getUserCount(tenantId: string) {
     const metadata = await this.prepareMetadata(tenantId);
-    const allUsers = await firstValueFrom(this.userService.listUsers({}, metadata));
+    const allUsers = await firstValueFrom(
+      this.userService.listUsers({}, metadata),
+    );
     return allUsers.items?.length || 0;
   }
-} 
+}

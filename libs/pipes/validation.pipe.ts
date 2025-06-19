@@ -1,4 +1,9 @@
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import {
+  PipeTransform,
+  Injectable,
+  ArgumentMetadata,
+  BadRequestException,
+} from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { ResourceValidationException } from '../exceptions/grpc-base.exception';
@@ -14,14 +19,14 @@ export class DtoValidationPipe implements PipeTransform<any> {
     const errors = await validate(object);
 
     if (errors.length > 0) {
-      const formattedErrors = errors.map(error => ({
+      const formattedErrors = errors.map((error) => ({
         property: error.property,
         constraints: error.constraints,
       }));
 
       throw new ResourceValidationException(
         JSON.stringify(formattedErrors),
-        'user'
+        'user',
       );
     }
 
@@ -32,4 +37,4 @@ export class DtoValidationPipe implements PipeTransform<any> {
     const types: Function[] = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
   }
-} 
+}

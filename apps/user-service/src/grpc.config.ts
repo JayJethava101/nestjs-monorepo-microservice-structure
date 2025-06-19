@@ -5,6 +5,6 @@ export const grpcConfig = {
   options: {
     package: 'user',
     protoPath: join(__dirname, '../../../libs/proto/user.proto'),
-    url: 'localhost:5000',
+    url: 'localhost:5001',
   },
 }; 

@@ -73,10 +73,17 @@ export class AuthService {
           name: userName || email.split('@')[0] // Use userName from Cognito or fallback to email prefix
         };
         
-       const user = await this.userService.create(userData, tenantId);
-        console.log(`✅ User created`, user);
+        console.log(`🔍 About to call userService.create with data:`, userData, `tenantId:`, tenantId);
+        const user = await this.userService.create(userData, tenantId);
+        console.log(`✅ User created successfully:`, user);
       } catch (error) {
         console.error('❌ Failed to create user in user service:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          stack: error.stack,
+          code: error.code,
+          details: error.details
+        });
         // Don't fail the MFA setup if user creation fails
       }
     }

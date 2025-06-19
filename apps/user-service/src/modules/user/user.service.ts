@@ -19,13 +19,15 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto, dbOptions: { tenantId: string, dbName: string }): Promise<User> {
     try {
+      this.logger.log(`Creating user with data: ${JSON.stringify(createUserDto)} for tenant: ${dbOptions.tenantId}`);
       const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
       const user = userRepository.create(createUserDto);
       const savedUser = await userRepository.save(user);
+      this.logger.log(`User created successfully: ${JSON.stringify(savedUser)}`);
       return savedUser;
-      console.log(savedUser)
     } catch (error) {
+      this.logger.error(`Failed to create user: ${error.message}`, error.stack);
       throw new ResourceInternalException('Failed to create user', this.MODULE_NAME);
     }
   }
@@ -36,7 +38,7 @@ export class UserService {
     search?: string,
     sort?: string,
     order?: 'ASC' | 'DESC'
-  }, dbOptions: { tenantId: string, dbName: string }): Promise<{ items: User[], total: number }> {
+  }, dbOptions: { tenantId: string, dbName: string }): Promise<{ items: User[], total: number, page: number, limit: number, results: number }> {
     try {
       const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
@@ -65,7 +67,13 @@ export class UserService {
       }
 
       const [items, total] = await queryBuilder.getManyAndCount();
-      return { items, total };
+      return { 
+        items, 
+        total, 
+        page: options.page || 1, 
+        limit: options.limit || total, 
+        results: items.length 
+      };
     } catch (error) {
       if (error instanceof ResourceNotFoundException) {
         throw error;

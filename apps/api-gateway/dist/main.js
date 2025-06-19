@@ -621,11 +621,18 @@ let AuthService = class AuthService {
                     email: email,
                     name: userName || email.split('@')[0]
                 };
+                console.log(`🔍 About to call userService.create with data:`, userData, `tenantId:`, tenantId);
                 const user = await this.userService.create(userData, tenantId);
-                console.log(`✅ User created`, user);
+                console.log(`✅ User created successfully:`, user);
             }
             catch (error) {
                 console.error('❌ Failed to create user in user service:', error);
+                console.error('❌ Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    code: error.code,
+                    details: error.details
+                });
             }
         }
         return result;
@@ -2742,21 +2749,26 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var UserService_1;
 var _a, _b;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UserService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const microservices_1 = __webpack_require__(/*! @nestjs/microservices */ "@nestjs/microservices");
 const grpc_js_1 = __webpack_require__(/*! @grpc/grpc-js */ "@grpc/grpc-js");
+const rxjs_1 = __webpack_require__(/*! rxjs */ "rxjs");
 const createError = __webpack_require__(/*! http-errors */ "http-errors");
 const tenant_service_1 = __webpack_require__(/*! ../tenant/tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
-let UserService = class UserService {
+let UserService = UserService_1 = class UserService {
     constructor(client, tenantService) {
         this.client = client;
         this.tenantService = tenantService;
+        this.logger = new common_1.Logger(UserService_1.name);
     }
     onModuleInit() {
         this.userService = this.client.getService('UserService');
+        this.logger.log('UserService initialized with gRPC client');
+        this.logger.log(`gRPC client service available: ${this.userService ? 'Yes' : 'No'}`);
     }
     async prepareMetadata(tenantId) {
         if (!tenantId) {
@@ -2769,53 +2781,64 @@ let UserService = class UserService {
         const metadata = new grpc_js_1.Metadata();
         metadata.add('tenant-id', tenantId);
         metadata.add('db-name', tenant.dbName);
+        this.logger.log(`Prepared metadata - tenantId: ${tenantId}, dbName: ${tenant.dbName}`);
         return metadata;
     }
     async findNameCounts(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.listUsersWithNameCount({}, metadata);
+        return (0, rxjs_1.firstValueFrom)(this.userService.listUsersWithNameCount({}, metadata));
     }
     async create(createUserDto, tenantId) {
+        this.logger.log(`Creating user with data: ${JSON.stringify(createUserDto)} for tenant: ${tenantId}`);
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.createUser(createUserDto, metadata);
+        this.logger.log('Sending gRPC request to user-service...');
+        try {
+            const result = await (0, rxjs_1.firstValueFrom)(this.userService.createUser(createUserDto, metadata));
+            this.logger.log(`User created successfully via gRPC: ${JSON.stringify(result)}`);
+            return result;
+        }
+        catch (error) {
+            this.logger.error(`gRPC call failed: ${error.message}`, error.stack);
+            throw error;
+        }
     }
     async findAll(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.listUsers({}, metadata);
+        return (0, rxjs_1.firstValueFrom)(this.userService.listUsers({}, metadata));
     }
     async findOne(id, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.getUser({ id }, metadata);
+        return (0, rxjs_1.firstValueFrom)(this.userService.getUser({ id }, metadata));
     }
     async update(id, updateUserDto, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.updateUser({
+        return (0, rxjs_1.firstValueFrom)(this.userService.updateUser({
             id,
             ...updateUserDto
-        }, metadata);
+        }, metadata));
     }
     async remove(id, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        return this.userService.deleteUser({ id }, metadata);
+        return (0, rxjs_1.firstValueFrom)(this.userService.deleteUser({ id }, metadata));
     }
     async findUsersByEmail(email, tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        const allUsers = await this.userService.listUsers({}, metadata);
-        return allUsers.users?.filter(user => user.email === email) || [];
+        const allUsers = await (0, rxjs_1.firstValueFrom)(this.userService.listUsers({}, metadata));
+        return allUsers.items?.filter(user => user.email === email) || [];
     }
     async findActiveUsers(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        const allUsers = await this.userService.listUsers({}, metadata);
-        return allUsers.users || [];
+        const allUsers = await (0, rxjs_1.firstValueFrom)(this.userService.listUsers({}, metadata));
+        return allUsers.items || [];
     }
     async getUserCount(tenantId) {
         const metadata = await this.prepareMetadata(tenantId);
-        const allUsers = await this.userService.listUsers({}, metadata);
-        return allUsers.users?.length || 0;
+        const allUsers = await (0, rxjs_1.firstValueFrom)(this.userService.listUsers({}, metadata));
+        return allUsers.items?.length || 0;
     }
 };
 exports.UserService = UserService;
-exports.UserService = UserService = __decorate([
+exports.UserService = UserService = UserService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('USER_PACKAGE')),
     __metadata("design:paramtypes", [typeof (_a = typeof microservices_1.ClientGrpc !== "undefined" && microservices_1.ClientGrpc) === "function" ? _a : Object, typeof (_b = typeof tenant_service_1.TenantService !== "undefined" && tenant_service_1.TenantService) === "function" ? _b : Object])
@@ -3223,6 +3246,16 @@ module.exports = require("jwt-decode");
 /***/ ((module) => {
 
 module.exports = require("path");
+
+/***/ }),
+
+/***/ "rxjs":
+/*!***********************!*\
+  !*** external "rxjs" ***!
+  \***********************/
+/***/ ((module) => {
+
+module.exports = require("rxjs");
 
 /***/ }),
 

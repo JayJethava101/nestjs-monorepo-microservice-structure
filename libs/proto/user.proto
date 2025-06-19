@@ -15,8 +15,9 @@ message UserResponse {
 
 // Extend base request with user-specific fields
 message CreateUserRequest {
-  string email = 1;
-  string name = 2;
+  string id = 1; // Optional, for external user ids like Cognito
+  string email = 2;
+  string name = 3;
 }
 
 message UpdateUserRequest {

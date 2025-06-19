@@ -3,6 +3,15 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({
+    description: 'The id of the user (optional, for external systems like Cognito)',
+    example: 'cognito-abc123',
+    required: false
+  })
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @ApiProperty({
     description: 'The email of the user',
     example: 'user@example.com'
   })

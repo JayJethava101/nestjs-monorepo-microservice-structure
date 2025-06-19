@@ -22,7 +22,10 @@ export class UserService {
       this.logger.log(`Creating user with data: ${JSON.stringify(createUserDto)} for tenant: ${dbOptions.tenantId}`);
       const connection = await this.databaseService.getTenantConnection(dbOptions.tenantId, dbOptions.dbName);
       const userRepository = connection.getRepository(User);
-      const user = userRepository.create(createUserDto);
+      const user = userRepository.create({
+        ...createUserDto,
+        ...(createUserDto.id ? { id: createUserDto.id } : {})
+      });
       const savedUser = await userRepository.save(user);
       this.logger.log(`User created successfully: ${JSON.stringify(savedUser)}`);
       return savedUser;

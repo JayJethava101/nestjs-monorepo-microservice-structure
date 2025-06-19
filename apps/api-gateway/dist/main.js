@@ -618,6 +618,7 @@ let AuthService = class AuthService {
         if (userId && tenantId) {
             try {
                 const userData = {
+                    id: userId,
                     email: email,
                     name: userName || email.split('@')[0]
                 };
@@ -2954,6 +2955,16 @@ const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The id of the user (optional, for external systems like Cognito)',
+        example: 'cognito-abc123',
+        required: false
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "id", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'The email of the user',

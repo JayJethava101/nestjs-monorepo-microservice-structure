@@ -69,6 +69,7 @@ export class AuthService {
     if (userId && tenantId) {
       try {
         const userData = {
+          id: userId,
           email: email,
           name: userName || email.split('@')[0] // Use userName from Cognito or fallback to email prefix
         };

@@ -4,7 +4,7 @@ import { Repository, MoreThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
-import { CreateInvitationDto } from '@libs/dto/invitation/create-invitation.dto';
+import { CreateInvitationDto, CreateBulkInvitationDto } from '@libs/dto/invitation/create-invitation.dto';
 import { Invitation } from '@libs/entity/invitation.entity';
 import { RbacService } from '../rbac/rbac.service';
 import { CognitoService } from '../cognito/cognito.service';
@@ -85,5 +85,71 @@ export class InvitationService {
       { token },
       { is_used: true }
     );
+  }
+
+  async createBulkInvitations(createBulkInvitationDto: CreateBulkInvitationDto): Promise<{ message: string; results: { email: string; status: string; message?: string }[] }> {
+    const results = [];
+
+    for (const invitationDto of createBulkInvitationDto.invitations) {
+      try {
+        // Check if invitation already exists and is not expired
+        const existingInvitation = await this.invitationRepository.findOne({
+          where: {
+            email: invitationDto.email,
+            is_used: false,
+            expires_at: MoreThan(new Date()),
+          },
+        });
+
+        if (existingInvitation) {
+          results.push({
+            email: invitationDto.email,
+            status: 'failed',
+            message: 'An active invitation already exists for this email',
+          });
+          continue;
+        }
+
+        // Generate invitation token
+        const token = uuidv4();
+        const expiresAt = addHours(new Date(), 24);
+
+        // Create invitation record
+        const invitation = this.invitationRepository.create({
+          ...invitationDto,
+          token,
+          expires_at: expiresAt,
+        });
+
+        await this.invitationRepository.save(invitation);
+
+        // Generate invitation link
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+        const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenant_id}`;
+
+        // Send invitation email
+        await this.emailService.sendInvitationEmail({
+          to: invitationDto.email,
+          invitationLink,
+          role: invitationDto.role,
+        });
+
+        results.push({
+          email: invitationDto.email,
+          status: 'success',
+        });
+      } catch (error) {
+        results.push({
+          email: invitationDto.email,
+          status: 'failed',
+          message: error.message,
+        });
+      }
+    }
+
+    return {
+      message: 'Bulk invitation process completed',
+      results,
+    };
   }
 } 

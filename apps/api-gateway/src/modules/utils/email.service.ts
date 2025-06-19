@@ -14,22 +14,35 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('SMTP_HOST'),
-      port: this.configService.get('SMTP_PORT'),
-      secure: true,
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASSWORD'),
-      },
-    });
+
+
+    const isProd = process.env.NODE_ENV === 'production';
+
+    this.transporter = nodemailer.createTransport(
+      isProd
+        ? {
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            secure: true,
+            auth: {
+              user: this.configService.get('SMTP_USER'),
+              pass: this.configService.get('SMTP_PASSWORD'),
+            },
+          }
+        : {
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            secure: false,
+            auth: null,
+          }
+    );
   }
 
   async sendInvitationEmail(data: InvitationEmailData): Promise<void> {
     const { to, invitationLink, role } = data;
 
     const mailOptions = {
-      from: this.configService.get('SMTP_FROM'),
+      from: 'noreply@example.com',
       to,
       subject: 'You have been invited to join our platform',
       html: `

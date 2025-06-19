@@ -1616,7 +1616,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InvitationController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -1633,6 +1633,9 @@ let InvitationController = class InvitationController {
     async createInvitation(createInvitationDto) {
         return this.invitationService.createInvitation(createInvitationDto);
     }
+    async createBulkInvitations(createBulkInvitationDto) {
+        return this.invitationService.createBulkInvitations(createBulkInvitationDto);
+    }
     async validateInvitation(token) {
         if (!token) {
             throw new common_1.BadRequestException('Token is required');
@@ -1643,6 +1646,9 @@ let InvitationController = class InvitationController {
 exports.InvitationController = InvitationController;
 __decorate([
     (0, common_1.Post)(),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('super-admin'),
     (0, swagger_1.ApiOperation)({ summary: 'Create a new user invitation' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Invitation sent successfully' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request or active invitation exists' }),
@@ -1651,6 +1657,19 @@ __decorate([
     __metadata("design:paramtypes", [typeof (_b = typeof create_invitation_dto_1.CreateInvitationDto !== "undefined" && create_invitation_dto_1.CreateInvitationDto) === "function" ? _b : Object]),
     __metadata("design:returntype", Promise)
 ], InvitationController.prototype, "createInvitation", null);
+__decorate([
+    (0, common_1.Post)('bulk'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('super-admin'),
+    (0, swagger_1.ApiOperation)({ summary: 'Create multiple user invitations (up to 5)' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Bulk invitations processed successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid request or too many invitations' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_c = typeof create_invitation_dto_1.CreateBulkInvitationDto !== "undefined" && create_invitation_dto_1.CreateBulkInvitationDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], InvitationController.prototype, "createBulkInvitations", null);
 __decorate([
     (0, common_1.Get)('validate'),
     (0, swagger_1.ApiOperation)({ summary: 'Validate an invitation token' }),
@@ -1664,7 +1683,6 @@ __decorate([
 exports.InvitationController = InvitationController = __decorate([
     (0, swagger_1.ApiTags)('invitations'),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('super_admin'),
     (0, common_1.Controller)('invitations'),
     __metadata("design:paramtypes", [typeof (_a = typeof invitation_service_1.InvitationService !== "undefined" && invitation_service_1.InvitationService) === "function" ? _a : Object])
@@ -1818,6 +1836,58 @@ let InvitationService = class InvitationService {
     }
     async markInvitationAsUsed(token) {
         await this.invitationRepository.update({ token }, { is_used: true });
+    }
+    async createBulkInvitations(createBulkInvitationDto) {
+        const results = [];
+        for (const invitationDto of createBulkInvitationDto.invitations) {
+            try {
+                const existingInvitation = await this.invitationRepository.findOne({
+                    where: {
+                        email: invitationDto.email,
+                        is_used: false,
+                        expires_at: (0, typeorm_2.MoreThan)(new Date()),
+                    },
+                });
+                if (existingInvitation) {
+                    results.push({
+                        email: invitationDto.email,
+                        status: 'failed',
+                        message: 'An active invitation already exists for this email',
+                    });
+                    continue;
+                }
+                const token = (0, uuid_1.v4)();
+                const expiresAt = (0, date_fns_1.addHours)(new Date(), 24);
+                const invitation = this.invitationRepository.create({
+                    ...invitationDto,
+                    token,
+                    expires_at: expiresAt,
+                });
+                await this.invitationRepository.save(invitation);
+                const frontendUrl = this.configService.get('FRONTEND_URL');
+                const invitationLink = `${frontendUrl}/signup?token=${token}&tenant_id=${invitationDto.tenant_id}`;
+                await this.emailService.sendInvitationEmail({
+                    to: invitationDto.email,
+                    invitationLink,
+                    role: invitationDto.role,
+                });
+                results.push({
+                    email: invitationDto.email,
+                    status: 'success',
+                });
+            }
+            catch (error) {
+                results.push({
+                    email: invitationDto.email,
+                    status: 'failed',
+                    message: error.message,
+                });
+            }
+        }
+        return {
+            message: 'Bulk invitation process completed',
+            results,
+        };
     }
 };
 exports.InvitationService = InvitationService;
@@ -2040,6 +2110,9 @@ const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const tenant_service_1 = __webpack_require__(/*! ./tenant.service */ "./apps/api-gateway/src/modules/tenant/tenant.service.ts");
 const tenant_dto_1 = __webpack_require__(/*! ./tenant.dto */ "./apps/api-gateway/src/modules/tenant/tenant.dto.ts");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const roles_decorator_1 = __webpack_require__(/*! ../../decorators/roles.decorator */ "./apps/api-gateway/src/decorators/roles.decorator.ts");
+const roles_guard_1 = __webpack_require__(/*! ../../guards/roles/roles.guard */ "./apps/api-gateway/src/guards/roles/roles.guard.ts");
+const jwt_guard_1 = __webpack_require__(/*! ../../guards/jwt/jwt.guard */ "./apps/api-gateway/src/guards/jwt/jwt.guard.ts");
 let TenantController = class TenantController {
     constructor(tenantService) {
         this.tenantService = tenantService;
@@ -2069,6 +2142,8 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get all tenants' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all tenants.' }),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('super-admin'),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -2597,24 +2672,32 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EmailService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
-const nodemailer = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'nodemailer'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+const nodemailer = __webpack_require__(/*! nodemailer */ "nodemailer");
 let EmailService = class EmailService {
     constructor(configService) {
         this.configService = configService;
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get('SMTP_HOST'),
-            port: this.configService.get('SMTP_PORT'),
-            secure: true,
-            auth: {
-                user: this.configService.get('SMTP_USER'),
-                pass: this.configService.get('SMTP_PASSWORD'),
-            },
-        });
+        const isProd = process.env.NODE_ENV === 'production';
+        this.transporter = nodemailer.createTransport(isProd
+            ? {
+                host: process.env.SMTP_HOST,
+                port: process.env.SMTP_PORT,
+                secure: true,
+                auth: {
+                    user: this.configService.get('SMTP_USER'),
+                    pass: this.configService.get('SMTP_PASSWORD'),
+                },
+            }
+            : {
+                host: process.env.SMTP_HOST,
+                port: process.env.SMTP_PORT,
+                secure: false,
+                auth: null,
+            });
     }
     async sendInvitationEmail(data) {
         const { to, invitationLink, role } = data;
         const mailOptions = {
-            from: this.configService.get('SMTP_FROM'),
+            from: 'noreply@example.com',
             to,
             subject: 'You have been invited to join our platform',
             html: `
@@ -2742,9 +2825,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateInvitationDto = exports.UserRole = void 0;
+exports.CreateBulkInvitationDto = exports.CreateInvitationDto = exports.UserRole = void 0;
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const class_transformer_1 = __webpack_require__(/*! class-transformer */ "class-transformer");
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "admin";
@@ -2778,6 +2862,20 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateInvitationDto.prototype, "tenant_id", void 0);
+class CreateBulkInvitationDto {
+}
+exports.CreateBulkInvitationDto = CreateBulkInvitationDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Array of invitations to create',
+        type: [CreateInvitationDto],
+    }),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => CreateInvitationDto),
+    (0, class_validator_1.ArrayMaxSize)(5, { message: 'Maximum 5 invitations can be sent at once' }),
+    __metadata("design:type", Array)
+], CreateBulkInvitationDto.prototype, "invitations", void 0);
 
 
 /***/ }),
@@ -3091,6 +3189,16 @@ module.exports = require("axios");
 
 /***/ }),
 
+/***/ "class-transformer":
+/*!************************************!*\
+  !*** external "class-transformer" ***!
+  \************************************/
+/***/ ((module) => {
+
+module.exports = require("class-transformer");
+
+/***/ }),
+
 /***/ "class-validator":
 /*!**********************************!*\
   !*** external "class-validator" ***!
@@ -3168,6 +3276,16 @@ module.exports = require("jwk-to-pem");
 /***/ ((module) => {
 
 module.exports = require("jwt-decode");
+
+/***/ }),
+
+/***/ "nodemailer":
+/*!*****************************!*\
+  !*** external "nodemailer" ***!
+  \*****************************/
+/***/ ((module) => {
+
+module.exports = require("nodemailer");
 
 /***/ }),
 

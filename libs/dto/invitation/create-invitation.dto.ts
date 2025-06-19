@@ -1,5 +1,6 @@
-import { IsEmail, IsString, IsUUID, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsUUID, IsEnum, IsArray, ValidateNested, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -28,4 +29,16 @@ export class CreateInvitationDto {
   })
   @IsUUID()
   tenant_id: string;
+}
+
+export class CreateBulkInvitationDto {
+  @ApiProperty({
+    description: 'Array of invitations to create',
+    type: [CreateInvitationDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateInvitationDto)
+  @ArrayMaxSize(5, { message: 'Maximum 5 invitations can be sent at once' })
+  invitations: CreateInvitationDto[];
 } 

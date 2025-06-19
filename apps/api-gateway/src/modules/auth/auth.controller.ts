@@ -1,6 +1,7 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, ValidationPipe, UsePipes } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, ValidationPipe, UsePipes, UseInterceptors } from '@nestjs/common';
 import { SignUpDto, ConfirmSignUpDto, SignInDto, SetupMFADto, VerifyMFASetupDto, VerifyMFADto, GlobalSignOutDto, RefreshTokenDto } from './dto/auth-dto';
 import { AuthService } from './auth.service';
+import { TransformInterceptor } from '@libs/interceptors/transform.interceptor';
 
 @Controller('auth')
 // @UsePipes(new ValidationPipe({ 

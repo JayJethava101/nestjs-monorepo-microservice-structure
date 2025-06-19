@@ -1,13 +1,17 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { TenantService } from './tenant.service';
 import { CreateTenantDto } from './tenant.dto';
 import { Tenant } from './tenant.entity';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Roles } from '../../decorators/roles.decorator';
+import { RolesGuard } from '../../guards/roles/roles.guard';
+import { JwtGuard } from '../../guards/jwt/jwt.guard';
 
 @ApiTags('tenants')
 @Controller('tenants')
 export class TenantController {
   constructor(private readonly tenantService: TenantService) {}
+
 
   @ApiOperation({ summary: 'Create a new tenant' })
   @ApiResponse({ status: 201, description: 'Tenant successfully created.' })
@@ -20,6 +24,8 @@ export class TenantController {
 
   @ApiOperation({ summary: 'Get all tenants' })
   @ApiResponse({ status: 200, description: 'Return all tenants.' })
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('super-admin')
   @Get()
   findAll(): Promise<Tenant[]> {
     return this.tenantService.findAll();

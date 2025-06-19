@@ -12,13 +12,6 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
-  // // Global pipes
-  // app.useGlobalPipes(new ValidationPipe({
-  //   transform: true,
-  //   whitelist: true,
-  //   forbidNonWhitelisted: true,
-  // }));
-
   // Global filters
   app.useGlobalFilters(
     new GlobalExceptionFilter(),
@@ -44,4 +37,5 @@ async function bootstrap() {
   console.log(`API Gateway is running on: http://localhost:${port}`);
   console.log(`Swagger documentation is available at: http://localhost:${port}/api`);
 }
+
 bootstrap();

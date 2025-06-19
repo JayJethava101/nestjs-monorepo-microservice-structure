@@ -15,6 +15,8 @@ import { UtilsModule } from './modules/utils/utils.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { CognitoModule } from './modules/cognito/cognito.module';
 import { UserTenantMapModule } from './modules/user-tenant-map/user-tenant-map.module';
+import { InvitationModule } from './modules/invitation/invitation.module';
+import { Invitation } from '@libs/entity/invitation.entity';
 
 @Module({
   imports: [
@@ -37,11 +39,11 @@ import { UserTenantMapModule } from './modules/user-tenant-map/user-tenant-map.m
       name: 'central_db',
       type: 'postgres',
       host: process.env.PG_HOST || 'localhost',
-      port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : 5432,
+      port: process.env.PG_PORT ? parseInt(process.env.PG_PORT) : parseInt(process.env.PG_PORT || '5433'),
       username: process.env.PG_USER || 'postgres',
-      password: process.env.PG_PASSWORD || '1234',
+      password: process.env.PG_PASSWORD || 'postgres',
       database: process.env.PG_MANAGEMENT_DB || 'sspm_central_db',
-      entities: [Tenant, UserTenantMap],
+      entities: [Tenant, UserTenantMap, Invitation],
       synchronize: true, // todo: Set to false in production
     }),
 
@@ -61,7 +63,8 @@ import { UserTenantMapModule } from './modules/user-tenant-map/user-tenant-map.m
     UserModule,
     TenantModule,
     CognitoModule,
-    UserTenantMapModule
+    UserTenantMapModule,
+    InvitationModule
   ],
   controllers: [AppController],
   providers: [

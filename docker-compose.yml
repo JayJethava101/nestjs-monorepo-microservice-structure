@@ -21,6 +21,7 @@ services:
       - USER_SERVICE_URL=user-service:5001
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - FRONTEND_URL=http://localhost:8025
     depends_on:
       - postgres
       - user-service

@@ -1,3 +1,5 @@
+#API Gateway Docker
+
 # Use the base image
 FROM node:20-alpine AS base
 
@@ -8,8 +10,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies and NestJS CLI
-RUN yarn install --frozen-lockfile && \
-    yarn global add @nestjs/cli
+RUN npm install && \
+    npm install -g @nestjs/cli
 
 # Copy shared libraries
 COPY libs ./libs
@@ -59,4 +61,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Start the application
-CMD ["node", "dist/main"] 
+CMD ["node", "dist/main"]

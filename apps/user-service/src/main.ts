@@ -9,6 +9,8 @@ import { DtoValidationPipe } from '../../../libs/pipes/validation.pipe';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
+  const isDocker = process.env.NODE_ENV === 'production';
+  
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {
